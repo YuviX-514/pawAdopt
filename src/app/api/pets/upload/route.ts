@@ -1,20 +1,22 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import cloudinary from "@/lib/cloudinary";
 import { connectDB } from "@/lib/db";
+import User from "@/models/User";
 import Pet from "@/models/Pet";
-import User from "@/models/User"; // import User model
-import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !session.user?.email) {
+    if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const formData = await req.formData();
+
+    // change "photo" → "photos" (fix for error #1)
     const file = formData.get("photos") as File;
 
     if (!file) {
@@ -25,22 +27,26 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     const uploadRes = await new Promise<any>((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        { resource_type: "image", folder: "pets" },
-        (err, result) => {
-          if (err || !result) return reject(err);
-          resolve(result);
-        }
-      ).end(buffer);
+      cloudinary.uploader
+        .upload_stream(
+          { resource_type: "image", folder: "pets" },
+          (err, result) => {
+            if (err || !result) return reject(err);
+            resolve(result);
+          }
+        )
+        .end(buffer);
     });
 
     await connectDB();
 
-    // 🔥 Find user by email to get their ObjectId
-    const dbUser = await User.findOne({ email: session.user.email });
-
+    // find user from DB (fix for error #2)
+    const dbUser = await User.findOne({ email: session.user?.email });
     if (!dbUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "User not found" },
+        { status: 404 }
+      );
     }
 
     const pet = await Pet.create({
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
       gender: formData.get("gender"),
       description: formData.get("description"),
       photos: [uploadRes.secure_url],
-      createdBy: dbUser._id, // ✅ use ObjectId from DB
+      createdBy: dbUser._id,
     });
 
     return NextResponse.json(pet);
