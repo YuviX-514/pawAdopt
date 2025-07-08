@@ -1,0 +1,168 @@
+[
+  {
+    "id": "1",
+    "name": "Max",
+    "species": "Dog",
+    "breed": "Labrador Retriever",
+    "age": 2,
+    "gender": "male",
+    "description": "Friendly and playful dog looking for a home.",
+    "photos": ["https://cdn2.thedogapi.com/images/B1svZgqE7.jpg"],
+    "adopted": false
+  },
+  {
+    "id": "2",
+    "name": "Bella",
+    "species": "Dog",
+    "breed": "Golden Retriever",
+    "age": 3,
+    "gender": "female",
+    "description": "Loyal and energetic dog.",
+    "photos": ["https://cdn2.thedogapi.com/images/BJa4kxc4X.jpg"],
+    "adopted": false
+  },
+  {
+    "id": "3",
+    "name": "Charlie",
+    "species": "Cat",
+    "breed": "Maine Coon",
+    "age": 4,
+    "gender": "male",
+    "description": "Fluffy cat, loves cuddles.",
+    "photos": ["https://cdn2.thecatapi.com/images/MTY3ODIyMQ.jpg"],
+    "adopted": false
+  },
+  {
+    "id": "4",
+    "name": "Luna",
+    "species": "Cat",
+    "breed": "Siamese",
+    "age": 2,
+    "gender": "female",
+    "description": "Chatty and affectionate cat.",
+    "photos": ["https://cdn2.thecatapi.com/images/cj.jpg"],
+    "adopted": false
+  },
+  {
+    "id": "5",
+    "name": "Rocky",
+    "species": "Dog",
+    "breed": "Boxer",
+    "age": 5,
+    "gender": "male",
+    "description": "Energetic dog who loves games.",
+    "photos": ["https://cdn2.thedogapi.com/images/ryo.jpg"],
+    "adopted": false
+  },
+  {
+    "id": "6",
+    "name": "Snowball",
+    "species": "Rabbit",
+    "breed": "Dutch",
+    "age": 1,
+    "gender": "female",
+    "description": "Cute bunny who loves carrots.",
+    "photos": ["https://images.unsplash.com/photo-1601758064087-62d948d72fd8"],
+    "adopted": false
+  },
+  {
+    "id": "7",
+    "name": "Flopsy",
+    "species": "Rabbit",
+    "breed": "Mini Rex",
+    "age": 2,
+    "gender": "male",
+    "description": "Calm and sweet rabbit.",
+    "photos": ["https://images.unsplash.com/photo-1601758174643-5794e2574cd0"],
+    "adopted": false
+  },
+  {
+    "id": "8",
+    "name": "Kiwi",
+    "species": "Bird",
+    "breed": "Parakeet",
+    "age": 1,
+    "gender": "female",
+    "description": "Chirpy little bird.",
+    "photos": ["https://images.unsplash.com/photo-1601758123927-c832cded6c4b"],
+    "adopted": false
+  },
+  {
+    "id": "9",
+    "name": "Coco",
+    "species": "Bird",
+    "breed": "Cockatiel",
+    "age": 2,
+    "gender": "male",
+    "description": "Talkative and social bird.",
+    "photos": ["https://images.unsplash.com/photo-1598136494443-473746bd9b5d"],
+    "adopted": false
+  },
+  {
+    "id": "10",
+    "name": "Chubby",
+    "species": "Guinea Pig",
+    "breed": "Abyssinian",
+    "age": 1,
+    "gender": "male",
+    "description": "Loves veggies and cuddles.",
+    "photos": ["https://images.unsplash.com/photo-1601758090239-0d8b60e83116"],
+    "adopted": false
+  },
+  {
+    "id": "11",
+    "name": "Shadow",
+    "species": "Cat",
+    "breed": "Persian",
+    "age": 3,
+    "gender": "female",
+    "description": "Quiet and elegant cat.",
+    "photos": ["https://cdn2.thecatapi.com/images/MTc5OTg3NA.jpg"],
+    "adopted": false
+  },
+  {
+    "id": "12",
+    "name": "Thor",
+    "species": "Dog",
+    "breed": "Rottweiler",
+    "age": 4,
+    "gender": "male",
+    "description": "Protective and loyal.",
+    "photos": ["https://cdn2.thedogapi.com/images/SyYtQe5VQ.jpg"],
+    "adopted": false
+  },
+  {
+    "id": "13",
+    "name": "Angel",
+    "species": "Bird",
+    "breed": "Lovebird",
+    "age": 1,
+    "gender": "female",
+    "description": "Sweet and colorful bird.",
+    "photos": ["https://images.unsplash.com/photo-1558980664-10ea62d7688e"],
+    "adopted": false
+  },
+  {
+    "id": "14",
+    "name": "Oliver",
+    "species": "Cat",
+    "breed": "Bengal",
+    "age": 2,
+    "gender": "male",
+    "description": "Active and intelligent cat.",
+    "photos": ["https://cdn2.thecatapi.com/images/8uP0Z9vyC.jpg"],
+    "adopted": false
+  },
+  {
+    "id": "15",
+    "name": "Buddy",
+    "species": "Dog",
+    "breed": "Dalmatian",
+    "age": 3,
+    "gender": "male",
+    "description": "Loyal and unique looking dog.",
+    "photos": ["https://cdn2.thedogapi.com/images/Sk4DXl54m.jpg"],
+    "adopted": false
+  }
+]
+  

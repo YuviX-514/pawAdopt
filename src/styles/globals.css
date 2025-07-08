@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "swiper/css/pagination";
+
+html, body {
+  overscroll-behavior: contain;
+  @apply bg-white text-[#3B3B3B];
+}
+/* Disable caret globally */
+* {
+  caret-color: transparent;
+}
+
+/* Enable caret only for inputs, textareas etc */
+input,
+textarea,
+[contenteditable="true"] {
+  caret-color: auto;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+}
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
