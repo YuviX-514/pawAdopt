@@ -8,7 +8,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Hide navbar on this page
   useEffect(() => {
     document.documentElement.style.overflow = "auto";
     document.body.style.overflow = "auto";
@@ -31,7 +30,7 @@ export default function LoginPage() {
       redirect: false,
     });
     if (res?.error) {
-      alert(res.error);
+      alert(res.error || "Invalid email or password");
     } else {
       window.location.href = "/";
     }
@@ -51,7 +50,6 @@ export default function LoginPage() {
         <div className="fixed -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-purple-700 to-purple-900 rounded-full blur-3xl opacity-50 -z-5" />
         <div className="fixed -bottom-10 -left-10 w-40 h-40 bg-gradient-to-br from-purple-700 to-purple-900 rounded-full blur-3xl opacity-50 -z-5" />
 
-        {/* Login Card */}
         <div className="w-full max-w-md space-y-6 bg-gradient-to-b from-gray-900 to-gray-800 p-8 rounded-xl border border-gray-700 shadow-2xl">
           <h1 className="text-4xl font-bold mb-2">
             Welcome Back<span className="text-purple-500"> .!</span>

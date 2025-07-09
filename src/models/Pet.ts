@@ -10,26 +10,28 @@ const PetSchema = new mongoose.Schema(
     description: { type: String },
     photos: [String],
 
-    // kis user ne upload kiya
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    // Reference to User who created pet listing
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
-    // adoption info
     adopted: { type: Boolean, default: false },
-adoptedBy: {
-  name: { type: String },
-  email: { type: String },
-  phone: { type: String },
-  address: { type: String },
-  city: { type: String },
-  state: { type: String },
-  country: { type: String },
-  postalCode: { type: String },
-  message: { type: String },
-},
 
+    adoptedBy: {
+      name: { type: String },
+      email: { type: String },
+      phone: { type: String },
+      address: { type: String },
+      city: { type: String },
+      state: { type: String },
+      country: { type: String },
+      postalCode: { type: String },
+      message: { type: String },
+    },
   },
   { timestamps: true }
 );
 
-// agar pehle se model exist kare to woh use kar lo, warna naya create karo
 export default mongoose.models.Pet || mongoose.model("Pet", PetSchema);

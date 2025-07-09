@@ -16,32 +16,43 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
 
-    // change "photo" → "photos" (fix for error #1)
-    const file = formData.get("photos") as File;
+    const files = formData.getAll("photos") as File[];
 
-    if (!file) {
-      return NextResponse.json({ message: "Photo required" }, { status: 400 });
+    if (!files || files.length === 0) {
+      return NextResponse.json(
+        { message: "At least one photo is required" },
+        { status: 400 }
+      );
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const photoUrls: string[] = [];
 
-    const uploadRes = await new Promise<any>((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          { resource_type: "image", folder: "pets" },
-          (err, result) => {
-            if (err || !result) return reject(err);
-            resolve(result);
-          }
-        )
-        .end(buffer);
-    });
+    for (const file of files) {
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const uploadRes = await new Promise<any>((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            {
+              resource_type: "image",
+              folder: "pets",
+            },
+            (err, result) => {
+              if (err || !result) return reject(err);
+              resolve(result);
+            }
+          )
+          .end(buffer);
+      });
+
+      photoUrls.push(uploadRes.secure_url);
+    }
 
     await connectDB();
 
-    // find user from DB (fix for error #2)
     const dbUser = await User.findOne({ email: session.user?.email });
+
     if (!dbUser) {
       return NextResponse.json(
         { message: "User not found" },
@@ -50,19 +61,24 @@ export async function POST(req: NextRequest) {
     }
 
     const pet = await Pet.create({
-      name: formData.get("name"),
-      species: formData.get("species"),
-      breed: formData.get("breed") || "",
-      age: Number(formData.get("age")) || null,
-      gender: formData.get("gender"),
-      description: formData.get("description"),
-      photos: [uploadRes.secure_url],
+      name: formData.get("name")?.toString() || "",
+      species: formData.get("species")?.toString() || "",
+      breed: formData.get("breed")?.toString() || "",
+      age: formData.get("age")
+        ? Number(formData.get("age")?.toString())
+        : null,
+      gender: formData.get("gender")?.toString() || "",
+      description: formData.get("description")?.toString() || "",
+      photos: photoUrls,
       createdBy: dbUser._id,
     });
 
-    return NextResponse.json(pet);
-  } catch (err: any) {
-    console.log(err);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
+    return NextResponse.json(pet, { status: 201 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { message: "Server error" },
+      { status: 500 }
+    );
   }
 }

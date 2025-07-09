@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 export default function UploadPetPage() {
@@ -28,6 +28,14 @@ export default function UploadPetPage() {
     }
   }, [status, router]);
 
+  // Cleanup previews to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      preview.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [preview]);
+
+  // Auth guard logic
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -36,8 +44,14 @@ export default function UploadPetPage() {
     );
   }
 
+  if (status === "authenticated" && !session) {
+    return null;
+  }
+
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -57,7 +71,10 @@ export default function UploadPetPage() {
     const files = e.target.files;
     if (files && files.length > 0) {
       const fileArr = Array.from(files);
-      setForm((prev) => ({ ...prev, photos: [...prev.photos, ...fileArr] }));
+      setForm((prev) => ({
+        ...prev,
+        photos: [...prev.photos, ...fileArr],
+      }));
       const previews = fileArr.map((f) => URL.createObjectURL(f));
       setPreview((prev) => [...prev, ...previews]);
     }
@@ -90,6 +107,8 @@ export default function UploadPetPage() {
     Object.entries(form).forEach(([key, val]) => {
       if (key === "photos" && Array.isArray(val)) {
         val.forEach((file) => body.append("photos", file));
+      } else if (key === "age" && val === "") {
+        // skip empty age
       } else if (val !== null) {
         body.append(key, val as any);
       }
@@ -179,11 +198,12 @@ export default function UploadPetPage() {
                       Change Photos
                       <input
                         id="file-upload"
-                        name="file-upload"
+                        name="photos"
                         type="file"
                         accept="image/*"
                         multiple
                         onChange={handleChangePhotos}
+                        disabled={loading}
                         className="sr-only"
                       />
                     </label>
@@ -194,11 +214,12 @@ export default function UploadPetPage() {
                       Add More Photos
                       <input
                         id="add-more-upload"
-                        name="add-more-upload"
+                        name="photos"
                         type="file"
                         accept="image/*"
                         multiple
                         onChange={handleAddMorePhotos}
+                        disabled={loading}
                         className="sr-only"
                       />
                     </label>
@@ -213,7 +234,10 @@ export default function UploadPetPage() {
             {/* Other Fields */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Pet Name *
                 </label>
                 <input
@@ -223,12 +247,16 @@ export default function UploadPetPage() {
                   required
                   value={form.name}
                   onChange={handleChange}
+                  disabled={loading}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label htmlFor="species" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="species"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Species *
                 </label>
                 <input
@@ -238,12 +266,16 @@ export default function UploadPetPage() {
                   required
                   value={form.species}
                   onChange={handleChange}
+                  disabled={loading}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label htmlFor="breed" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="breed"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Breed
                 </label>
                 <input
@@ -252,12 +284,16 @@ export default function UploadPetPage() {
                   type="text"
                   value={form.breed}
                   onChange={handleChange}
+                  disabled={loading}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label htmlFor="age" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="age"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Age (years)
                 </label>
                 <input
@@ -267,12 +303,16 @@ export default function UploadPetPage() {
                   min="0"
                   value={form.age}
                   onChange={handleChange}
+                  disabled={loading}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="gender"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Gender
                 </label>
                 <select
@@ -280,6 +320,7 @@ export default function UploadPetPage() {
                   name="gender"
                   value={form.gender}
                   onChange={handleChange}
+                  disabled={loading}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
                 >
                   <option value="">Select gender</option>
@@ -290,7 +331,10 @@ export default function UploadPetPage() {
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Description
               </label>
               <textarea
@@ -299,6 +343,7 @@ export default function UploadPetPage() {
                 rows={4}
                 value={form.description}
                 onChange={handleChange}
+                disabled={loading}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
                 placeholder="Tell us about the pet's personality, habits, special needs, etc."
               />

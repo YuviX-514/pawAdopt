@@ -13,9 +13,9 @@ export interface IUser extends Document {
 const UserSchema = new Schema<IUser>(
   {
     name: { type: String },
-    username: { type: String, required: true },
+    username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    image: { type: String },
+    image: { type: String, default: "/user.png" },
     password: { type: String, default: null },
     provider: { type: String, default: "credentials" },
     adoptedPets: [{ type: Schema.Types.ObjectId, ref: "Pet" }],

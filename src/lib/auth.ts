@@ -25,12 +25,18 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         await connectDB();
 
+        console.log("AUTH credentials", credentials);
+
+        // ✅ Remove provider filter - search only by email
         const user = await User.findOne({
           email: credentials!.email,
-          provider: "credentials",
         });
 
+        console.log("Found user:", user);
+
+        // must exist, and have a password (i.e. not OAuth-only)
         if (!user || !user.password) {
+          console.log("User not found or missing password");
           return null;
         }
 
@@ -38,6 +44,8 @@ export const authOptions: NextAuthOptions = {
           credentials!.password,
           user.password
         );
+
+        console.log("Password valid:", isValid);
 
         if (!isValid) return null;
 

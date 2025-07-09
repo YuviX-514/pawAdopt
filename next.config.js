@@ -4,7 +4,7 @@ const nextConfig = {
   images: {
     domains: ["lh3.googleusercontent.com",'cdn2.thedogapi.com',
       'cdn2.thecatapi.com',
-      'images.unsplash.com',],
+      'images.unsplash.com', 'res.cloudinary.com'],
      remotePatterns: [
       {
         protocol: 'https',

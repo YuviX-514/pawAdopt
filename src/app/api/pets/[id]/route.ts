@@ -14,8 +14,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       );
     }
 
-    const pet = await Pet.findById(params.id)
-      .populate("createdBy", "name email imageUrl");
+    const pet = await Pet.findById(params.id).populate("createdBy", "username email image");
+
 
     if (!pet) {
       return NextResponse.json(
