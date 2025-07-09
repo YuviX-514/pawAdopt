@@ -18,6 +18,7 @@ const PetSchema = new mongoose.Schema(
     },
 
     adopted: { type: Boolean, default: false },
+    
 
     adoptedBy: {
       name: { type: String },
@@ -29,6 +30,7 @@ const PetSchema = new mongoose.Schema(
       country: { type: String },
       postalCode: { type: String },
       message: { type: String },
+      adoptedAt: { type: Date },
     },
   },
   { timestamps: true }

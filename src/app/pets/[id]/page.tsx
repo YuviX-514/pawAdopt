@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-
+import { formatDistanceToNow } from "date-fns";
+import { ClockIcon } from "@heroicons/react/24/solid";
 
 type Pet = {
   id: string;
@@ -15,6 +16,7 @@ type Pet = {
   description?: string;
   photos?: string[];
   adopted: boolean;
+  createdAt: string;
   adoptedBy?: {
     username: string;
     email: string;
@@ -41,14 +43,14 @@ export default function PetDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const { data: session, status } = useSession();
-  
+
   const handleAdoptClick = () => {
-  if (!session) {
-    router.push("/auth/login");
-  } else {
-    router.push(`/pets/${params.id}/adopt`);
-  }
-};
+    if (!session) {
+      router.push("/auth/login");
+    } else {
+      router.push(`/pets/${params.id}/adopt`);
+    }
+  };
 
   useEffect(() => {
     async function fetchPet() {
@@ -242,26 +244,43 @@ export default function PetDetailPage() {
                 </p>
               </div>
 
-              <div className="border-t pt-4 mt-4">
-                <h3 className="text-sm font-semibold text-gray-800 mb-2">
-                  Listed By
-                </h3>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={pet.createdBy.image || "/user.png"} // ✅ should work now
-                    alt={pet.createdBy.username || "User"}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <p className="text-gray-900 text-sm font-medium">
-                      {pet.createdBy.username}
-                    </p>
-                    <p className="text-gray-600 text-xs">
-                      {pet.createdBy.email}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <div className="border-t pt-6 mt-8">
+  <h3 className="text-sm font-semibold text-gray-800 mb-4 tracking-wide uppercase">
+    Listed By
+  </h3>
+
+  <div className="flex items-center gap-5 bg-gray-50 p-4 rounded-xl shadow-inner">
+    <img
+      src={pet.createdBy.image || "/user.png"}
+      alt={pet.createdBy.username || "User"}
+      className="w-14 h-14 rounded-full object-cover border-2 border-amber-500 shadow"
+    />
+
+    <div className="flex-1">
+      <p className="text-gray-900 text-base font-bold leading-tight">
+        {pet.createdBy.username}
+      </p>
+      <p className="text-gray-600 text-xs hover:underline cursor-pointer">
+        {pet.createdBy.email}
+      </p>
+
+      {pet.createdAt && (
+        <div className="flex items-center mt-3">
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-600 mr-2">
+            <ClockIcon className="w-3.5 h-3.5" />
+          </span>
+          <span className="text-xs text-gray-700">
+            Listed{" "}
+            {formatDistanceToNow(new Date(pet.createdAt), {
+              addSuffix: true,
+            })}
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
+
 
               {/* Adopted Details or Buttons */}
               <div className="mt-6">
@@ -286,11 +305,11 @@ export default function PetDetailPage() {
                 ) : (
                   <div className="flex flex-col md:flex-row gap-3">
                     <button
-  onClick={handleAdoptClick}
-  className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded transition"
->
-  🐾 Adopt Me
-</button>
+                      onClick={handleAdoptClick}
+                      className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded transition"
+                    >
+                      🐾 Adopt Me
+                    </button>
 
                     <button
                       onClick={() => router.push("/pets")}

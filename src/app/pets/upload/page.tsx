@@ -301,6 +301,7 @@ export default function UploadPetPage() {
                   name="age"
                   type="number"
                   min="0"
+                  step="0.1"
                   value={form.age}
                   onChange={handleChange}
                   disabled={loading}
