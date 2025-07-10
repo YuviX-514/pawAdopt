@@ -3,18 +3,13 @@ import { connectDB } from "@/lib/db";
 import Pet from "@/models/Pet";
 import mongoose from "mongoose";
 
-interface RequestContext {
-  params: {
-    id: string;
-  };
-}
-
 export async function POST(
-  request: NextRequest,
-  context: RequestContext
-): Promise<NextResponse> {
+  req: NextRequest,
+  context: { params: Record<string, string> }
+) {
   try {
     await connectDB();
+
     const petId = context.params.id;
 
     if (!petId || !mongoose.Types.ObjectId.isValid(petId)) {
@@ -24,16 +19,22 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
-    const requiredFields = ['name', 'email', 'phone', 'address', 'city', 'state', 'postalCode'];
-    const missingFields = requiredFields.filter(field => !body[field]);
+    const body = await req.json();
+    const {
+      name,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      country,
+      postalCode,
+      message,
+    } = body;
 
-    if (missingFields.length > 0) {
+    if (!name || !email || !phone || !address || !city || !state || !postalCode) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: `Missing required fields: ${missingFields.join(', ')}` 
-        },
+        { success: false, message: "All fields are required" },
         { status: 400 }
       );
     }
@@ -48,29 +49,36 @@ export async function POST(
 
     if (pet.adopted) {
       return NextResponse.json(
-        { success: false, message: "Pet already adopted" },
+        { success: false, message: "This pet has already been adopted" },
         { status: 400 }
       );
     }
 
     pet.adopted = true;
     pet.adoptedBy = {
-      ...body,
-      date: new Date()
+      name,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      country,
+      postalCode,
+      message,
+      date: new Date(),
     };
 
     await pet.save();
 
     return NextResponse.json({
       success: true,
-      message: "Adoption successful",
-      data: pet
+      message: "Adoption request submitted successfully",
+      data: pet,
     });
-
   } catch (error) {
     console.error("Adoption error:", error);
     return NextResponse.json(
-      { success: false, message: "Server error" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
