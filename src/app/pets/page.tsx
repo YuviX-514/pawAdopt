@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 type Pet = {
   id: string;
@@ -87,15 +88,17 @@ export default function PetsPage() {
               href={`/pets/${pet.id}`}
               className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
             >
-              <div className="aspect-w-4 aspect-h-3 overflow-hidden">
+              <div className="aspect-w-4 aspect-h-3 relative overflow-hidden">
                 {pet.photos?.[0] ? (
-                  <img
+                  <Image
                     src={pet.photos[0]}
                     alt={pet.name}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 1024px) 100vw, 33vw"
                   />
                 ) : (
-                  <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400">
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-16 w-16"

@@ -48,6 +48,14 @@ export default function Navbar() {
     setSidebarOpen(false);
   };
 
+  // ✅ Build nav items conditionally
+  const navItems = [
+    ...(session?.user ? [{ label: "My Pets", href: "/my-pets" }] : []),
+    { label: "Pets", href: "/pets" },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
+  ];
+
   return (
     <header className="fixed top-0 z-50 w-full border-b border-amber-100/20 bg-gradient-to-b from-amber-900/80 to-amber-950/90 text-white shadow backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6">
@@ -80,13 +88,13 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6 ml-10">
-          {["Home", "Pets", "About", "Contact"].map((item) => (
+          {navItems.map((item) => (
             <Link
-              key={item}
-              href={item === "Home" ? "/" : `/${item.toLowerCase()}`}
+              key={item.label}
+              href={item.href}
               className="text-amber-100 hover:text-amber-300 font-medium transition-colors duration-200 hover:scale-105"
             >
-              {item}
+              {item.label}
             </Link>
           ))}
         </nav>
@@ -137,7 +145,7 @@ export default function Navbar() {
                   <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-amber-300">
                     {dbUser.image ? (
                       <Image
-                        src={dbUser?.image || "/user.png"}
+                        src={dbUser.image || "/user.png"}
                         alt="User profile"
                         fill
                         className="object-cover w-full h-full"
@@ -150,7 +158,6 @@ export default function Navbar() {
                       </div>
                     )}
                   </div>
-
                   {/* Name and Dropdown */}
                   {dbUser?.username && (
                     <div className="hidden md:flex items-center gap-1">
@@ -273,14 +280,14 @@ export default function Navbar() {
 
         {/* Sidebar Links */}
         <nav className="flex-1 overflow-y-auto p-4">
-          {["Home", "Pets", "About", "Contact"].map((item) => (
+          {navItems.map((item) => (
             <Link
-              key={item}
-              href={item === "Home" ? "/" : `/${item.toLowerCase()}`}
+              key={item.label}
+              href={item.href}
               className="block py-3 px-4 text-amber-100 hover:bg-amber-800/50 rounded-lg transition-colors mb-1"
               onClick={() => setSidebarOpen(false)}
             >
-              {item}
+              {item.label}
             </Link>
           ))}
         </nav>
@@ -296,7 +303,7 @@ export default function Navbar() {
                 <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-amber-300">
                   {dbUser.image ? (
                     <Image
-                      src={dbUser?.image || "/user.png"}
+                      src={dbUser.image || "/user.png"}
                       alt="User profile"
                       fill
                       className="object-cover w-full h-full"

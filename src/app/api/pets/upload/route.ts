@@ -4,7 +4,18 @@ import { authOptions } from "@/lib/auth";
 import cloudinary from "@/lib/cloudinary";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import Pet from "@/models/Pet";
+import Pet, { PetType } from "@/models/Pet";
+import {UploadApiResponse, UploadApiErrorResponse} from "cloudinary";
+
+import { HydratedDocument } from "mongoose";
+
+function transformPet(pet: HydratedDocument<PetType>) {
+  const obj = pet.toObject<PetType & { id?: string }>();
+  obj.id = pet.id.toString();
+  delete (obj as any)._id;
+  delete (obj as any).__v;
+  return obj;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,20 +42,21 @@ export async function POST(req: NextRequest) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      const uploadRes = await new Promise<any>((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream(
-            {
-              resource_type: "image",
-              folder: "pets",
-            },
-            (err, result) => {
-              if (err || !result) return reject(err);
-              resolve(result);
-            }
-          )
-          .end(buffer);
-      });
+      const uploadRes = await new Promise<UploadApiResponse>((resolve, reject) => {
+  cloudinary.uploader
+    .upload_stream(
+      {
+        resource_type: "image",
+        folder: "pets",
+      },
+      (err, result) => {
+        if (err || !result) return reject(err);
+        resolve(result);
+      }
+    )
+    .end(buffer);
+});
+
 
       photoUrls.push(uploadRes.secure_url);
     }
@@ -73,7 +85,9 @@ export async function POST(req: NextRequest) {
       createdBy: dbUser._id,
     });
 
-    return NextResponse.json(pet, { status: 201 });
+    const transformed = transformPet(pet);
+
+    return NextResponse.json(transformed, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

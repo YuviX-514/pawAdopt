@@ -1,6 +1,6 @@
 "use client";
 
-import { PawPrint, Search, PhoneCall, Heart } from "lucide-react";
+import { Search, PhoneCall, Heart } from "lucide-react";
 
 export default function HowItWorks() {
   const steps = [

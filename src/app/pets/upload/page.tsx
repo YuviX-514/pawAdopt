@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 export default function UploadPetPage() {
   const { data: session, status } = useSession();
@@ -35,7 +36,6 @@ export default function UploadPetPage() {
     };
   }, [preview]);
 
-  // Auth guard logic
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -109,8 +109,8 @@ export default function UploadPetPage() {
         val.forEach((file) => body.append("photos", file));
       } else if (key === "age" && val === "") {
         // skip empty age
-      } else if (val !== null) {
-        body.append(key, val as any);
+      } else if (typeof val === "string") {
+        body.append(key, val);
       }
     });
 
@@ -123,8 +123,12 @@ export default function UploadPetPage() {
       if (!res.ok) throw new Error("Upload failed");
       toast.success("Pet uploaded successfully!");
       router.push("/pets");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error("Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
@@ -158,10 +162,12 @@ export default function UploadPetPage() {
                     <div className="grid grid-cols-2 gap-4">
                       {preview.map((src, index) => (
                         <div key={index} className="relative">
-                          <img
+                          <Image
                             src={src}
                             alt={`Preview ${index}`}
-                            className="mx-auto h-48 w-full object-cover rounded-lg"
+                            width={400}
+                            height={300}
+                            className="mx-auto object-cover rounded-lg h-48 w-full"
                           />
                           <button
                             type="button"

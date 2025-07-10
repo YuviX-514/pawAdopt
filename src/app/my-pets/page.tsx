@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 type Pet = {
   _id: string;
@@ -11,33 +14,46 @@ type Pet = {
 };
 
 export default function MyPetsPage() {
-  const [email, setEmail] = useState("");
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async () => {
-    if (!email) {
-      toast.error("Please enter your email!");
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (!session?.user?.email) {
+      toast.error("Please log in to view your adopted pets.");
       return;
     }
 
-    setLoading(true);
-    try {
-      const res = await fetch("/api/pets/adopted", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+    const fetchPets = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/pets/adopted", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: session.user!.email }),
+        });
 
-      if (!res.ok) throw new Error("Failed to fetch adopted pets.");
+        if (!res.ok) throw new Error("Failed to fetch adopted pets.");
 
-      const data = await res.json();
-      setPets(data);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
+        const data: Pet[] = await res.json();
+        setPets(data);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPets();
+  }, [session, status]);
+
+  const handlePetClick = (petId: string) => {
+    router.push(`/pets/${petId}`);
   };
 
   return (
@@ -47,43 +63,35 @@ export default function MyPetsPage() {
           My Adopted Pets
         </h1>
 
-        <div className="mb-8 flex gap-4">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            className="w-full border border-gray-300 rounded-md py-2 px-3"
-          />
-          <button
-            onClick={handleSearch}
-            disabled={loading}
-            className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700"
-          >
-            {loading ? "Searching..." : "Find My Pets"}
-          </button>
-        </div>
-
-        {pets.length > 0 ? (
+        {loading ? (
+          <p className="text-center text-gray-500">Loading your pets...</p>
+        ) : pets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {pets.map((pet) => (
               <div
                 key={pet._id}
-                className="bg-white rounded-lg shadow p-4 text-center"
+                className="bg-white rounded-lg shadow p-4 text-center cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handlePetClick(pet._id)}
               >
-                <img
-                  src={pet.photos?.[0] || "/no-photo.jpg"}
-                  alt={pet.name}
-                  className="w-full h-48 object-cover rounded mb-3"
-                />
-                <h2 className="text-xl font-bold text-gray-800">{pet.name}</h2>
+                <div className="relative w-full h-48 mb-3">
+                  <Image
+                    src={pet.photos?.[0] || "/no-photo.jpg"}
+                    alt={pet.name}
+                    fill
+                    className="object-cover rounded"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  {pet.name}
+                </h2>
                 <p className="text-gray-600">{pet.species}</p>
               </div>
             ))}
           </div>
         ) : (
           <p className="text-center text-gray-500">
-            {loading ? "" : "No adopted pets found."}
+            No adopted pets found.
           </p>
         )}
       </div>

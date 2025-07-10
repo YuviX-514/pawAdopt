@@ -1,14 +1,14 @@
 import { connectDB } from "@/lib/db";
-import Pet from "@/models/Pet";
+import Pet, { PetType } from "@/models/Pet";
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import mongoose, { HydratedDocument } from "mongoose";
 
 // Helper to transform Mongoose document to JSON with `id`
-function transformPet(pet: any) {
-  const obj = pet.toObject();
-  obj.id = obj._id.toString();
-  delete obj._id;
-  delete obj.__v;
+function transformPet(pet: HydratedDocument<PetType>) {
+  const obj = pet.toObject<PetType & { id?: string }>();
+  obj.id = pet.id.toString();
+  delete (obj as any)._id;
+  delete (obj as any).__v;
   return obj;
 }
 
@@ -18,9 +18,12 @@ export async function GET() {
     const pets = await Pet.find().populate("createdBy");
     const transformedPets = pets.map(transformPet);
     return NextResponse.json(transformedPets, { status: 200 });
-  } catch (error) {
-    console.error("GET /api/pets error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } catch (err) {
+    console.error("GET /api/pets error:", err);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -29,18 +32,30 @@ export async function POST(req: Request) {
     await connectDB();
     const data = await req.json();
 
-    // Dummy user for testing
-    const dummyUserId = new mongoose.Types.ObjectId("64a1234567890abcdef12345");
+    // Ensure createdBy is provided
+    if (!data.createdBy) {
+      return NextResponse.json(
+        { error: "`createdBy` is required" },
+        { status: 400 }
+      );
+    }
 
-    const pet = await Pet.create({
-      ...data,
-      createdBy: dummyUserId,
-    });
+    // Optionally validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(data.createdBy)) {
+      return NextResponse.json(
+        { error: "`createdBy` must be a valid ObjectId" },
+        { status: 400 }
+      );
+    }
 
+    const pet = await Pet.create(data);
     const transformed = transformPet(pet);
     return NextResponse.json(transformed, { status: 200 });
-  } catch (error) {
-    console.error("POST /api/pets error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } catch (err) {
+    console.error("POST /api/pets error:", err);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

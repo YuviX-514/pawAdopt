@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import AuthPoster from "@/components/layout/AuthPoster";
+import Image from "next/image";
+
 
 export default function SignupPage() {
   const [username, setUsername] = useState("");
@@ -55,7 +57,9 @@ export default function SignupPage() {
         {/* Signup Card */}
         <div className="w-full max-w-md space-y-6 bg-gradient-to-b from-gray-900 to-gray-800 p-8 rounded-xl border border-gray-700 shadow-2xl relative z-10">
           <h2 className="text-3xl font-bold mb-2">Signup</h2>
-          <p className="text-gray-400 mb-4">Let's get started.!</p>
+          
+          <p className="text-gray-400 mb-4">Let&apos;s get started.!</p>
+
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
@@ -104,7 +108,14 @@ export default function SignupPage() {
               className="p-2 border border-gray-600 rounded hover:bg-gray-700 transition cursor-pointer flex items-center justify-center gap-2"
             >
               <span>Continue with Google</span>
-              <img src="/google.svg" alt="Google" className="w-5 h-5" />
+              <Image
+  src="/google.svg"
+  alt="Google"
+  width={20}
+  height={20}
+  className="w-5 h-5"
+/>
+
             </button>
 
             <button
@@ -112,7 +123,14 @@ export default function SignupPage() {
               className="p-2 border border-gray-600 rounded hover:bg-gray-700 transition cursor-pointer flex items-center justify-center gap-2"
             >
               <span>Continue with GitHub</span>
-              <img src="/github.jpeg" alt="GitHub" className="w-5 h-5" />
+              <Image
+  src="/github.jpeg"
+  alt="GitHub"
+  width={20}
+  height={20}
+  className="w-5 h-5"
+/>
+
             </button>
           </div>
 

@@ -29,8 +29,9 @@ export default function Features() {
           Why Choose PawAdopt?
         </h2>
         <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto">
-          We're committed to making perfect matches that last a lifetime
-        </p>
+  We&apos;re committed to making perfect matches that last a lifetime
+</p>
+
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feature, index) => (

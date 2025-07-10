@@ -12,25 +12,29 @@ type Testimonial = {
 export default function TestimonialCarousel() {
   const testimonials: Testimonial[] = [
     {
-      quote: "Adopting Max was the best decision we ever made. The adoption process was so smooth!",
+      quote:
+        "Adopting Max was the best decision we ever made. The adoption process was so smooth!",
       author: "Sarah & Family",
       pet: "Golden Retriever",
       bg: "bg-amber-50",
     },
     {
-      quote: "Our cat Luna settled in immediately. She's brought so much joy to our home!",
+      quote:
+        "Our cat Luna settled in immediately. She's brought so much joy to our home!",
       author: "Michael T.",
       pet: "Domestic Shorthair",
       bg: "bg-orange-50",
     },
     {
-      quote: "The health check was so thorough. We knew exactly what to expect with our new puppy!",
+      quote:
+        "The health check was so thorough. We knew exactly what to expect with our new puppy!",
       author: "Johnson Family",
       pet: "Labrador Mix",
       bg: "bg-amber-50",
     },
     {
-      quote: "The follow-up support after adoption was exceptional. Highly recommend!",
+      quote:
+        "The follow-up support after adoption was exceptional. Highly recommend!",
       author: "David L.",
       pet: "Siamese Cat",
       bg: "bg-orange-50",
@@ -42,7 +46,8 @@ export default function TestimonialCarousel() {
       bg: "bg-amber-50",
     },
     {
-      quote: "The matching questionnaire found us the perfect energetic companion.",
+      quote:
+        "The matching questionnaire found us the perfect energetic companion.",
       author: "Alex P.",
       pet: "Border Collie",
       bg: "bg-orange-50",
@@ -62,32 +67,31 @@ export default function TestimonialCarousel() {
   ];
 
   useEffect(() => {
-  const carousel = carouselRef.current;
-  if (!carousel) return;
+    const carousel = carouselRef.current;
+    if (!carousel) return;
 
-  let animationFrameId: number;
-  const speed = 1;
+    let animationFrameId: number;
+    const speed = 1;
 
-  const animate = () => {
-    if (!isHovered && !isDragging) {
-      carousel.scrollLeft += speed;
+    const animate = () => {
+      if (!isHovered && !isDragging) {
+        carousel.scrollLeft += speed;
 
-      // Reset logic
-      const scrollWidth = carousel.scrollWidth;
-      const visibleWidth = carousel.clientWidth;
+        // Reset logic
+        const scrollWidth = carousel.scrollWidth;
+        const visibleWidth = carousel.clientWidth;
 
-      if (carousel.scrollLeft >= (scrollWidth - visibleWidth)) {
-        // Jump back smoothly
-        carousel.scrollLeft = carousel.scrollLeft - (scrollWidth / 3);
+        if (carousel.scrollLeft >= scrollWidth - visibleWidth) {
+          // Jump back smoothly
+          carousel.scrollLeft = carousel.scrollLeft - scrollWidth / 3;
+        }
       }
-    }
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
     animationFrameId = requestAnimationFrame(animate);
-  };
-
-  animationFrameId = requestAnimationFrame(animate);
-  return () => cancelAnimationFrame(animationFrameId);
-}, [isHovered, isDragging]);
-
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [isHovered, isDragging]);
 
   // Drag logic
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -143,15 +147,14 @@ export default function TestimonialCarousel() {
                 className={`${testimonial.bg} flex-shrink-0 w-80 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300`}
               >
                 <p className="text-gray-700 mb-6 text-lg italic">
-                  "{testimonial.quote}"
+                  &ldquo;{testimonial.quote}&rdquo;
                 </p>
+
                 <div className="border-t border-orange-100 pt-4">
                   <p className="font-bold text-gray-800">
                     {testimonial.author}
                   </p>
-                  <p className="text-amber-600">
-                    Adopted: {testimonial.pet}
-                  </p>
+                  <p className="text-amber-600">Adopted: {testimonial.pet}</p>
                 </div>
               </div>
             ))}

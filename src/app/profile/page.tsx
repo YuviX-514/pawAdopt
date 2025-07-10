@@ -72,7 +72,7 @@ export default function ProfilePage() {
       } else {
         alert(data.message || "Error updating profile");
       }
-    } catch (error) {
+    } catch {
       alert("An error occurred. Please try again.");
     } finally {
       setLoading(false);

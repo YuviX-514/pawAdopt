@@ -1,8 +1,10 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import AuthPoster from "@/components/layout/AuthPoster";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -54,7 +56,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold mb-2">
             Welcome Back<span className="text-purple-500"> .!</span>
           </h1>
-          <p className="text-gray-400 mb-6">Glad you're back.!</p>
+          <p className="text-gray-400 mb-6">Glad you&apos;re back.!</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
@@ -93,7 +95,13 @@ export default function LoginPage() {
               onClick={() => signIn("google", { callbackUrl: "/" })}
               className="p-2.5 border border-gray-600 rounded hover:bg-gray-800 transition cursor-pointer flex items-center justify-center gap-3"
             >
-              <img src="/google.svg" alt="Google" className="w-5 h-5" />
+              <Image
+                src="/google.svg"
+                alt="Google"
+                width={20}
+                height={20}
+                className="w-5 h-5"
+              />
               <span>Continue with Google</span>
             </button>
 
@@ -101,13 +109,19 @@ export default function LoginPage() {
               onClick={() => signIn("github", { callbackUrl: "/" })}
               className="p-2.5 border border-gray-600 rounded hover:bg-gray-800 transition cursor-pointer flex items-center justify-center gap-3"
             >
-              <img src="/github.jpeg" alt="GitHub" className="w-5 h-5" />
+              <Image
+                src="/github.jpeg"
+                alt="GitHub"
+                width={20}
+                height={20}
+                className="w-5 h-5"
+              />
               <span>Continue with GitHub</span>
             </button>
           </div>
 
           <p className="text-center text-gray-500 text-sm mt-6">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/auth/signup"
               className="text-purple-400 hover:underline cursor-pointer"

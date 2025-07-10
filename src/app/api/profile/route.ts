@@ -4,8 +4,9 @@ import { authOptions } from "@/lib/auth";
 import User from "@/models/User";
 import { connectDB } from "@/lib/db";
 import cloudinary from "@/lib/cloudinary";
+import { UploadApiResponse } from "cloudinary";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await imageFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const uploadRes = await new Promise<any>((resolve, reject) => {
+    const uploadRes = await new Promise<UploadApiResponse>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           resource_type: "image",
