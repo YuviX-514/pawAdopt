@@ -1,14 +1,18 @@
+import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Pet from "@/models/Pet";
-import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  req: NextRequest,
+  context: { params: { id: string } }
+) {
   try {
     await connectDB();
 
-    // Validate ID
-    if (!params.id || !mongoose.Types.ObjectId.isValid(params.id)) {
+    const petId = context.params.id;
+
+    if (!petId || !mongoose.Types.ObjectId.isValid(petId)) {
       return NextResponse.json(
         { success: false, message: "Invalid pet ID" },
         { status: 400 }
@@ -16,9 +20,18 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     const body = await req.json();
-    const { name, email, phone, address, city, state, country, postalCode, message } = body;
+    const {
+      name,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      country,
+      postalCode,
+      message,
+    } = body;
 
-    // Validate required fields
     if (!name || !email || !phone || !address || !city || !state || !postalCode) {
       return NextResponse.json(
         { success: false, message: "All fields are required" },
@@ -26,7 +39,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       );
     }
 
-    const pet = await Pet.findById(params.id);
+    const pet = await Pet.findById(petId);
     if (!pet) {
       return NextResponse.json(
         { success: false, message: "Pet not found" },
@@ -41,7 +54,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       );
     }
 
-    // Update pet adoption status
     pet.adopted = true;
     pet.adoptedBy = {
       name,
@@ -53,7 +65,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       country,
       postalCode,
       message,
-      date: new Date()
+      date: new Date(),
     };
 
     await pet.save();
@@ -61,9 +73,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({
       success: true,
       message: "Adoption request submitted successfully",
-      data: pet
+      data: pet,
     });
-
   } catch (error) {
     console.error("Adoption error:", error);
     return NextResponse.json(
