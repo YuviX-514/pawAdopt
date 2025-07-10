@@ -4,7 +4,7 @@ import Pet from "@/models/Pet";
 import mongoose from "mongoose";
 
 export async function POST(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -19,7 +19,7 @@ export async function POST(
       );
     }
 
-    const body = await req.json();
+    const body = await request.json();
     const {
       name,
       email,
@@ -32,6 +32,7 @@ export async function POST(
       message,
     } = body;
 
+    // Required fields validation
     if (!name || !email || !phone || !address || !city || !state || !postalCode) {
       return NextResponse.json(
         { success: false, message: "All fields are required" },
@@ -54,6 +55,7 @@ export async function POST(
       );
     }
 
+    // Update pet adoption status
     pet.adopted = true;
     pet.adoptedBy = {
       name,
@@ -83,3 +85,6 @@ export async function POST(
     );
   }
 }
+
+// Type declaration for the route
+export type POST = typeof POST;
