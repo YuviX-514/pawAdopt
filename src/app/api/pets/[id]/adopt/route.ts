@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 
 export async function POST(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Record<string, string> }
 ) {
   try {
     await connectDB();
