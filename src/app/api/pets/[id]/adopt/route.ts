@@ -5,12 +5,12 @@ import mongoose from "mongoose";
 
 export async function POST(
   req: NextRequest,
-  context: { params: Record<string, string> }
+  { params }: { params: { id: string } }
 ) {
   try {
     await connectDB();
 
-    const petId = context.params.id;
+    const petId = params.id;
 
     if (!petId || !mongoose.Types.ObjectId.isValid(petId)) {
       return NextResponse.json(
