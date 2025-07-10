@@ -7,7 +7,7 @@ import User from "@/models/User";
 
 import mongoose, { HydratedDocument } from "mongoose";
 import Pet, { PetType } from "@/models/Pet";
-import {UploadApiResponse, UploadApiErrorResponse} from "cloudinary";
+import {UploadApiResponse} from "cloudinary";
 
 type PetDocumentObject = PetType & {
   _id?: mongoose.Types.ObjectId;
