@@ -3,12 +3,18 @@ import Pet, { PetType } from "@/models/Pet";
 import { NextResponse } from "next/server";
 import mongoose, { HydratedDocument } from "mongoose";
 
+type PetDocumentObject = PetType & {
+  _id?: mongoose.Types.ObjectId;
+  __v?: number;
+  id?: string;
+};
+
 // Helper to transform Mongoose document to JSON with `id`
 function transformPet(pet: HydratedDocument<PetType>) {
-  const obj = pet.toObject<PetType & { id?: string }>();
+  const obj = pet.toObject<PetDocumentObject>();
   obj.id = pet.id.toString();
-  delete (obj as any)._id;
-  delete (obj as any).__v;
+  delete obj.id;
+  delete obj.__v;
   return obj;
 }
 
@@ -32,7 +38,6 @@ export async function POST(req: Request) {
     await connectDB();
     const data = await req.json();
 
-    // Ensure createdBy is provided
     if (!data.createdBy) {
       return NextResponse.json(
         { error: "`createdBy` is required" },
@@ -40,7 +45,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Optionally validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(data.createdBy)) {
       return NextResponse.json(
         { error: "`createdBy` must be a valid ObjectId" },

@@ -4,16 +4,21 @@ import { authOptions } from "@/lib/auth";
 import cloudinary from "@/lib/cloudinary";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import Pet, { PetType } from "@/models/Pet";
-import {UploadApiResponse, UploadApiErrorResponse} from "cloudinary";
 
-import { HydratedDocument } from "mongoose";
+import mongoose, { HydratedDocument } from "mongoose";
+import Pet, { PetType } from "@/models/Pet";
+import {UploadApiResponse} from "cloudinary";
+type PetDocumentObject = PetType & {
+  _id?: mongoose.Types.ObjectId;
+  __v?: number;
+  id?: string;
+};
 
 function transformPet(pet: HydratedDocument<PetType>) {
-  const obj = pet.toObject<PetType & { id?: string }>();
+  const obj = pet.toObject<PetDocumentObject>();
   obj.id = pet.id.toString();
-  delete (obj as any)._id;
-  delete (obj as any).__v;
+  delete obj.id;
+  delete obj.__v;
   return obj;
 }
 

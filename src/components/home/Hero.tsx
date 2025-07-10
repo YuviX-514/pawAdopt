@@ -9,8 +9,6 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-// ✅ FIX: Register Swiper modules outside the component
-SwiperCore.use([Navigation]);
 
 export default function Hero() {
   const images = [
