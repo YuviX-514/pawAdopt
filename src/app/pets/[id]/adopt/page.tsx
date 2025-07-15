@@ -36,13 +36,13 @@ export default function AdoptPetPage() {
 
     // Fetch pet name for header
     fetch(`/api/pets/${params.id}`)
-      .then((res) => res.json())
-      .then((data) => setPetName(data.name || ""))
+      .then(res => res.json())
+      .then(data => setPetName(data.name || ""))
       .catch(() => setPetName(""));
 
     // Pre-fill user data if logged in
     if (session?.user) {
-      setForm((prev) => ({
+      setForm(prev => ({
         ...prev,
         name: session.user?.name || "",
         email: session.user?.email || "",
@@ -50,13 +50,9 @@ export default function AdoptPetPage() {
     }
   }, [params.id, session, router]);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,12 +84,8 @@ export default function AdoptPetPage() {
 
       toast.success("Adoption request submitted successfully!");
       router.push("/pets");
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error("An unexpected error occurred.");
-      }
+    } catch  {
+      toast.error("An Error Occured: ");
     } finally {
       setLoading(false);
     }
@@ -259,33 +251,15 @@ export default function AdoptPetPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full px-6 py-3 rounded-lg font-medium text-white ${
-                  loading
-                    ? "bg-amber-400 cursor-not-allowed"
-                    : "bg-amber-600 hover:bg-amber-700"
-                } transition-colors`}
+                className={`w-full px-6 py-3 rounded-lg font-medium text-white ${loading 
+                  ? 'bg-amber-400 cursor-not-allowed' 
+                  : 'bg-amber-600 hover:bg-amber-700'} transition-colors`}
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Processing...
                   </span>

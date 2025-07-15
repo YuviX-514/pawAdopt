@@ -1,302 +1,171 @@
 "use client";
 
-import { useRouter, useParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import toast from "react-hot-toast";
-import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 
-export default function AdoptPetPage() {
-  const router = useRouter();
-  const params = useParams();
-  const { data: session } = useSession();
+type Pet = {
+  id: string;
+  name: string;
+  species: string;
+  breed?: string;
+  age?: number;
+  gender?: string;
+  description?: string;
+  photos?: string[];
+  adopted: boolean;
+};
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    country: "India",
-    postalCode: "",
-    message: "",
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [petId, setPetId] = useState("");
-  const [petName, setPetName] = useState("");
+export default function PetsPage() {
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!params.id) {
-      toast.error("Invalid pet ID");
-      router.push("/pets");
-      return;
-    }
-    setPetId(params.id as string);
-
-    // Fetch pet name for header
-    fetch(`/api/pets/${params.id}`)
-      .then((res) => res.json())
-      .then((data) => setPetName(data.name || ""))
-      .catch(() => setPetName(""));
-
-    // Pre-fill user data if logged in
-    if (session?.user) {
-      setForm((prev) => ({
-        ...prev,
-        name: session.user?.name || "",
-        email: session.user?.email || "",
-      }));
-    }
-  }, [params.id, session, router]);
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!petId) {
-      toast.error("Pet ID missing");
-      return;
-    }
-
-    if (!form.name || !form.email || !form.phone || !form.address) {
-      toast.error("Please fill all required fields");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch(`/api/pets/${petId}/adopt`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Adoption request failed");
+    async function fetchPets() {
+      try {
+        const res = await fetch("/api/pets");
+        if (!res.ok) throw new Error("Failed to fetch pets");
+        const data: Pet[] = await res.json();
+        setPets(data);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
       }
-
-      toast.success("Adoption request submitted successfully!");
-      router.push("/pets");
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error("An unexpected error occurred.");
-      }
-    } finally {
-      setLoading(false);
     }
-  };
+    fetchPets();
+  }, []);
 
-  if (!petId) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center py-25 justify-center min-h-screen bg-gray-50">
+        <div className="p-6 max-w-md text-center">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error loading pets</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-18 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          {/* Header */}
-          <div className="bg-amber-600 px-6 py-4">
-            <h1 className="text-2xl font-bold text-white">
-              Adopt {petName || "This Pet"}
-            </h1>
-            <p className="text-amber-100">Please fill the adoption form</p>
-          </div>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-25 bg-gray-50 min-h-screen">
+      <div className="text-center mb-16">
+        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl mb-4">
+          Find Your Perfect Companion
+        </h1>
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          Browse our adorable pets waiting for their forever homes
+        </p>
+      </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
-                <select
-                  name="country"
-                  value={form.country}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-                >
-                  <option value="India">India</option>
-                  <option value="USA">United States</option>
-                  <option value="UK">United Kingdom</option>
-                  <option value="Canada">Canada</option>
-                  <option value="Australia">Australia</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Street Address *
-              </label>
-              <input
-                type="text"
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={form.city}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State *
-                </label>
-                <input
-                  type="text"
-                  name="state"
-                  value={form.state}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code *
-                </label>
-                <input
-                  type="text"
-                  name="postalCode"
-                  value={form.postalCode}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Why do you want to adopt this pet?
-              </label>
-              <textarea
-                name="message"
-                rows={4}
-                value={form.message}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
-                placeholder="Tell us about your experience with pets and why you'd be a good owner..."
-              />
-            </div>
-
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full px-6 py-3 rounded-lg font-medium text-white ${
-                  loading
-                    ? "bg-amber-400 cursor-not-allowed"
-                    : "bg-amber-600 hover:bg-amber-700"
-                } transition-colors`}
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center">
+      {pets.length === 0 ? (
+        <div className="text-center py-20">
+          <div className="text-gray-400 text-6xl mb-4">🐾</div>
+          <h3 className="text-2xl font-medium text-gray-900 mb-2">No pets available</h3>
+          <p className="text-gray-500">Check back later for new arrivals!</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {pets.map((pet) => (
+            <Link
+              key={pet.id}
+              href={`/pets/${pet.id}`}
+              className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className="aspect-w-4 aspect-h-3 relative overflow-hidden">
+                {pet.photos?.[0] ? (
+                  <Image
+                    src={pet.photos[0]}
+                    alt={pet.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 1024px) 100vw, 33vw"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
                     <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                       xmlns="http://www.w3.org/2000/svg"
+                      className="h-16 w-16"
                       fill="none"
                       viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
                       <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
-                    Processing...
-                  </span>
-                ) : (
-                  "Submit Adoption Request"
+                  </div>
                 )}
-              </button>
-            </div>
-          </form>
+              </div>
+
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {pet.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 uppercase font-medium tracking-wide">
+                      {pet.species}
+                    </p>
+                  </div>
+                  {pet.adopted ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Adopted
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Available
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {pet.breed && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Breed:</span> {pet.breed}
+                    </p>
+                  )}
+                  {pet.age && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Age:</span> {pet.age} years
+                    </p>
+                  )}
+                  {pet.gender && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Gender:</span> {pet.gender}
+                    </p>
+                  )}
+                </div>
+
+                {pet.description && (
+                  <p className="mt-3 text-sm text-gray-500 line-clamp-2">
+                    {pet.description}
+                  </p>
+                )}
+              </div>
+            </Link>
+          ))}
         </div>
-      </div>
+      )}
     </main>
   );
 }

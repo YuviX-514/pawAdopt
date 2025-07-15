@@ -1,20 +1,25 @@
 import { connectDB } from "@/lib/db";
 import Pet from "@/models/Pet";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import mongoose from "mongoose";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+interface Params {
+  params: Promise<{ id: string }>;
+}
+export async function GET(req: NextRequest, { params }: Params) {
   try {
     await connectDB();
+    
+    const { id } = await params;
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { success: false, message: "Invalid pet ID" },
         { status: 400 }
       );
     }
 
-    const pet = await Pet.findById(params.id).populate("createdBy", "username email image");
+    const pet = await Pet.findById(id).populate("createdBy", "username email image");
 
 
     if (!pet) {
