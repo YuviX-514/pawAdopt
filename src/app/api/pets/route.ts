@@ -1,22 +1,22 @@
 import { connectDB } from "@/lib/db";
 import Pet, { PetType } from "@/models/Pet";
+import User from "@/models/User";
 import { NextResponse } from "next/server";
-import mongoose, { HydratedDocument } from "mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
-type PetDocumentObject = PetType & {
-  _id?: mongoose.Types.ObjectId;
-  __v?: number;
-  id?: string;
-};
+// 🧠 Type-safe transformation
 
-// Helper to transform Mongoose document to JSON with `id`
 function transformPet(pet: HydratedDocument<PetType>) {
-  const obj = pet.toObject<PetDocumentObject>();
-  obj.id = pet.id.toString();
-  delete obj.id;
-  delete obj.__v;
-  return obj;
+  const obj = pet.toObject() as PetType & { _id: Types.ObjectId };
+  const { _id, ...rest } = obj;
+
+  return {
+    ...rest,
+    id: _id.toString(),
+  };
 }
+
+
 
 export async function GET() {
   try {
@@ -24,12 +24,9 @@ export async function GET() {
     const pets = await Pet.find().populate("createdBy");
     const transformedPets = pets.map(transformPet);
     return NextResponse.json(transformedPets, { status: 200 });
-  } catch (err) {
-    console.error("GET /api/pets error:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("GET /api/pets error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -38,28 +35,22 @@ export async function POST(req: Request) {
     await connectDB();
     const data = await req.json();
 
-    if (!data.createdBy) {
-      return NextResponse.json(
-        { error: "`createdBy` is required" },
-        { status: 400 }
-      );
+    // ✅ Get actual user from email
+    const user = await User.findOne({ email: data.email });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(data.createdBy)) {
-      return NextResponse.json(
-        { error: "`createdBy` must be a valid ObjectId" },
-        { status: 400 }
-      );
-    }
+    // ✅ Create pet with actual user reference
+    const pet = await Pet.create({
+      ...data,
+      createdBy: user._id,
+    });
 
-    const pet = await Pet.create(data);
     const transformed = transformPet(pet);
     return NextResponse.json(transformed, { status: 200 });
-  } catch (err) {
-    console.error("POST /api/pets error:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("POST /api/pets error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

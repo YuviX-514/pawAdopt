@@ -88,14 +88,15 @@ export default function PetsPage() {
               href={`/pets/${pet.id}`}
               className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
             >
-              <div className="aspect-w-4 aspect-h-3 relative overflow-hidden">
+              <div className="relative aspect-[4/3]">
                 {pet.photos?.[0] ? (
                   <Image
                     src={pet.photos[0]}
                     alt={pet.name}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 1024px) 100vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    priority
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
@@ -144,7 +145,7 @@ export default function PetsPage() {
                       <span className="font-medium">Breed:</span> {pet.breed}
                     </p>
                   )}
-                  {pet.age && (
+                  {pet.age !== undefined && (
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">Age:</span> {pet.age} years
                     </p>

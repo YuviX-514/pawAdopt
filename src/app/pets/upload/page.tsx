@@ -19,6 +19,9 @@ export default function UploadPetPage() {
     description: "",
     photos: [] as File[],
   });
+  const MAX_FILES = 5;
+const MAX_MB = 5;
+const [photoWarning, setPhotoWarning] = useState("");
 
   const [preview, setPreview] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,6 +39,7 @@ export default function UploadPetPage() {
     };
   }, [preview]);
 
+  // Auth guard logic
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -58,27 +62,62 @@ export default function UploadPetPage() {
   };
 
   const handleChangePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const fileArr = Array.from(files);
-      setForm((prev) => ({ ...prev, photos: fileArr }));
-      const previews = fileArr.map((f) => URL.createObjectURL(f));
-      setPreview(previews);
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  const fileArr = Array.from(files);
+  
+  // Validate count
+  if (fileArr.length > MAX_FILES) {
+    toast.error(`Max ${MAX_FILES} photos allowed`);
+    setPhotoWarning(`⚠️ Only ${MAX_FILES} photos allowed`);
+    return;
+  }
+
+  // Validate size
+  for (const file of fileArr) {
+    if (file.size / (1024 * 1024) > MAX_MB) {
+      toast.error(`"${file.name}" is too big. Max ${MAX_MB}MB allowed.`);
+      return;
     }
-  };
+  }
+
+  setPhotoWarning("");
+  setForm((prev) => ({ ...prev, photos: fileArr }));
+  const previews = fileArr.map((f) => URL.createObjectURL(f));
+  setPreview(previews);
+};
+
 
   const handleAddMorePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const fileArr = Array.from(files);
-      setForm((prev) => ({
-        ...prev,
-        photos: [...prev.photos, ...fileArr],
-      }));
-      const previews = fileArr.map((f) => URL.createObjectURL(f));
-      setPreview((prev) => [...prev, ...previews]);
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  const fileArr = Array.from(files);
+  const totalPhotos = form.photos.length + fileArr.length;
+
+  if (totalPhotos > MAX_FILES) {
+    toast.error(`You can only upload ${MAX_FILES} photos total`);
+    setPhotoWarning(`⚠️ Max ${MAX_FILES} photos allowed`);
+    return;
+  }
+
+  for (const file of fileArr) {
+    if (file.size / (1024 * 1024) > MAX_MB) {
+      toast.error(`"${file.name}" is too big. Max ${MAX_MB}MB allowed.`);
+      return;
     }
-  };
+  }
+
+  setPhotoWarning("");
+  setForm((prev) => ({
+    ...prev,
+    photos: [...prev.photos, ...fileArr],
+  }));
+  const previews = fileArr.map((f) => URL.createObjectURL(f));
+  setPreview((prev) => [...prev, ...previews]);
+};
+
 
   const handleRemovePhoto = (index: number) => {
     setForm((prev) => {
@@ -105,14 +144,15 @@ export default function UploadPetPage() {
 
     const body = new FormData();
     Object.entries(form).forEach(([key, val]) => {
-      if (key === "photos" && Array.isArray(val)) {
-        val.forEach((file) => body.append("photos", file));
-      } else if (key === "age" && val === "") {
-        // skip empty age
-      } else if (typeof val === "string") {
-        body.append(key, val);
-      }
-    });
+  if (key === "photos" && Array.isArray(val)) {
+    val.forEach((file) => body.append("photos", file));
+  } else if (key === "age" && val === "") {
+    // skip empty age
+  } else if (val !== null && (typeof val === "string" || val instanceof Blob)) {
+    body.append(key, val);
+  }
+});
+
 
     try {
       const res = await fetch("/api/pets/upload", {
@@ -123,12 +163,8 @@ export default function UploadPetPage() {
       if (!res.ok) throw new Error("Upload failed");
       toast.success("Pet uploaded successfully!");
       router.push("/pets");
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error("Something went wrong");
-      }
+    } catch  {
+      toast.error("An error occurred");
     } finally {
       setLoading(false);
     }
@@ -158,17 +194,22 @@ export default function UploadPetPage() {
               </label>
               <div className="mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl">
                 <div className="space-y-3 text-center w-full">
+                  {photoWarning && (
+  <p className="text-sm text-red-600 font-medium mb-2">{photoWarning}</p>
+)}
                   {preview.length > 0 ? (
                     <div className="grid grid-cols-2 gap-4">
                       {preview.map((src, index) => (
                         <div key={index} className="relative">
                           <Image
-                            src={src}
-                            alt={`Preview ${index}`}
-                            width={400}
-                            height={300}
-                            className="mx-auto object-cover rounded-lg h-48 w-full"
-                          />
+  src={src}
+  alt={`Preview ${index}`}
+  width={500}
+  height={500}
+  className="mx-auto h-48 w-full object-cover rounded-lg"
+  unoptimized
+/>
+
                           <button
                             type="button"
                             onClick={() => handleRemovePhoto(index)}
@@ -197,39 +238,64 @@ export default function UploadPetPage() {
                   )}
 
                   <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
-                    <label
-                      htmlFor="file-upload"
-                      className="cursor-pointer bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded"
-                    >
-                      Change Photos
-                      <input
-                        id="file-upload"
-                        name="photos"
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleChangePhotos}
-                        disabled={loading}
-                        className="sr-only"
-                      />
-                    </label>
-                    <label
-                      htmlFor="add-more-upload"
-                      className="cursor-pointer border border-amber-600 text-amber-600 hover:bg-amber-50 font-medium py-2 px-4 rounded"
-                    >
-                      Add More Photos
-                      <input
-                        id="add-more-upload"
-                        name="photos"
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleAddMorePhotos}
-                        disabled={loading}
-                        className="sr-only"
-                      />
-                    </label>
-                  </div>
+  {preview.length === 0 ? (
+    // Show only "Add Photo" when no images
+    <label
+      htmlFor="file-upload"
+      className="cursor-pointer bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded"
+    >
+      Add Photo
+      <input
+        id="file-upload"
+        name="photos"
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleChangePhotos}
+        disabled={loading}
+        className="sr-only"
+      />
+    </label>
+  ) : (
+    <>
+      {/* Show Change + Add More when already photos exist */}
+      <label
+        htmlFor="file-upload"
+        className="cursor-pointer bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded"
+      >
+        Change Photos
+        <input
+          id="file-upload"
+          name="photos"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleChangePhotos}
+          disabled={loading}
+          className="sr-only"
+        />
+      </label>
+      <label
+        htmlFor="add-more-upload"
+        className="cursor-pointer border border-amber-600 text-amber-600 hover:bg-amber-50 font-medium py-2 px-4 rounded"
+      >
+        Add More Photos
+        <input
+          id="add-more-upload"
+          name="photos"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleAddMorePhotos}
+          disabled={loading}
+          className="sr-only"
+        />
+      </label>
+    </>
+  )}
+</div>
+
+
                   <p className="text-xs text-gray-500 mt-2">
                     PNG, JPG up to 5MB each
                   </p>
@@ -325,6 +391,7 @@ export default function UploadPetPage() {
                 <select
                   id="gender"
                   name="gender"
+                  required
                   value={form.gender}
                   onChange={handleChange}
                   disabled={loading}

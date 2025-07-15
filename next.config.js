@@ -1,14 +1,7 @@
-// next.config.js
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    outputFileTracing: false,
-  },
+  
   images: {
-    domains: ["lh3.googleusercontent.com",'cdn2.thedogapi.com',
-      'cdn2.thecatapi.com',
-      'images.unsplash.com', 'res.cloudinary.com'],
-     remotePatterns: [
+    remotePatterns: [
       {
         protocol: 'https',
         hostname: 'cdn2.thedogapi.com',
@@ -20,6 +13,14 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
       },
     ],
   },
