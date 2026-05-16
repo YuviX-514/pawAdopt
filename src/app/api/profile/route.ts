@@ -1,60 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import User from "@/models/User";
-import { connectDB } from "@/lib/db";
+import type { UploadApiResponse } from "cloudinary";
 import cloudinary from "@/lib/cloudinary";
-import { UploadApiResponse } from "cloudinary";
+import { normalizeRole } from "@/lib/roles";
+import { getCurrentUser } from "@/lib/server-auth";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
+const PROFILE_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const PROFILE_PHOTO_MAX_BYTES = 3 * 1024 * 1024;
 
-  if (!session?.user?.email) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+function serializeProfile(user: Awaited<ReturnType<typeof getCurrentUser>>) {
+  if (!user) return null;
 
-  await connectDB();
-
-  const user = await User.findOne({ email: session.user.email });
-  if (!user) {
-    return NextResponse.json({ message: "User not found" }, { status: 404 });
-  }
-
-  return NextResponse.json({
-    user: {
-      username: user.username,
-      image: user.image,
-      email: user.email,
-    },
-  });
+  return {
+    id: user.id,
+    username: user.username,
+    image: user.image || "/user.png",
+    email: user.email,
+    role: user.role,
+  };
 }
 
-export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.email) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  await connectDB();
-
-  const formData = await req.formData();
-  const username = formData.get("username") as string;
-  const imageFile = formData.get("image") as File | null;
-
-  const user = await User.findOne({ email: session.user.email });
-  if (!user) {
-    return NextResponse.json({ message: "User not found" }, { status: 404 });
-  }
-
-  let imageUrl = user.image;
-
-  if (imageFile) {
-    const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const uploadRes = await new Promise<UploadApiResponse>((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
+function uploadProfileImage(buffer: Buffer) {
+  return new Promise<UploadApiResponse>((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
         {
           resource_type: "image",
           folder: "users",
@@ -63,16 +31,82 @@ export async function POST(req: NextRequest) {
           if (err || !result) return reject(err);
           resolve(result);
         }
-      ).end(buffer);
-    });
+      )
+      .end(buffer);
+  });
+}
 
+export async function GET() {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  return NextResponse.json({ user: serializeProfile(currentUser) });
+}
+
+export async function POST(req: NextRequest) {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const formData = await req.formData();
+  const username = formData.get("username");
+  const role = normalizeRole(formData.get("role"));
+  const imageFile = formData.get("image");
+
+  if (typeof username !== "string" || username.trim().length < 2) {
+    return NextResponse.json(
+      { message: "Username must be at least 2 characters." },
+      { status: 400 }
+    );
+  }
+
+  let imageUrl = currentUser.document.image || "/user.png";
+
+  if (formData.get("removeImage") === "true") {
+    imageUrl = "/user.png";
+  }
+
+  if (imageFile instanceof File && imageFile.size > 0) {
+    if (!PROFILE_PHOTO_TYPES.includes(imageFile.type)) {
+      return NextResponse.json(
+        { message: "Profile photo must be a JPG, PNG, or WebP image." },
+        { status: 400 }
+      );
+    }
+
+    if (imageFile.size > PROFILE_PHOTO_MAX_BYTES) {
+      return NextResponse.json(
+        { message: "Profile photo must be under 3MB." },
+        { status: 400 }
+      );
+    }
+
+    const buffer = Buffer.from(await imageFile.arrayBuffer());
+    const uploadRes = await uploadProfileImage(buffer);
     imageUrl = uploadRes.secure_url;
   }
 
-  user.username = username;
-  user.image = imageUrl;
+  currentUser.document.username = username.trim();
+  currentUser.document.image = imageUrl;
 
-  await user.save();
+  if (role !== "admin") {
+    currentUser.document.role = role;
+  }
 
-  return NextResponse.json({ message: "Profile updated", user });
+  await currentUser.document.save();
+
+  return NextResponse.json({
+    message: "Profile updated",
+    user: serializeProfile({
+      ...currentUser,
+      username: currentUser.document.username,
+      image: currentUser.document.image,
+      role: normalizeRole(currentUser.document.role),
+    }),
+  });
 }

@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthOptions, Account, User as NextAuthUser } from "next-auth";
 import User from "@/models/User";
 import { connectDB } from "@/lib/db";
+import { normalizeRole } from "@/lib/roles";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
@@ -23,36 +24,28 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        await connectDB();
-
-        console.log("AUTH credentials", credentials);
-
-        // ✅ Remove provider filter - search only by email
-        const user = await User.findOne({
-          email: credentials!.email,
-        });
-
-        console.log("Found user:", user);
-
-        // must exist, and have a password (i.e. not OAuth-only)
-        if (!user || !user.password) {
-          console.log("User not found or missing password");
+        if (!credentials?.email || !credentials.password) {
           return null;
         }
 
-        const isValid = await bcrypt.compare(
-          credentials!.password,
-          user.password
-        );
+        await connectDB();
 
-        console.log("Password valid:", isValid);
+        const user = await User.findOne({
+          email: credentials.email.toLowerCase(),
+        });
 
+        if (!user?.password) {
+          return null;
+        }
+
+        const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) return null;
 
         return {
           id: user._id.toString(),
           name: user.username,
           email: user.email,
+          role: normalizeRole(user.role),
         };
       },
     }),
@@ -65,36 +58,58 @@ export const authOptions: NextAuthOptions = {
       user: NextAuthUser;
       account: Account | null;
     }) {
+      if (!user.email) return false;
+
       await connectDB();
 
-      const existing = await User.findOne({ email: user.email });
+      const email = user.email.toLowerCase();
+      const existing = await User.findOne({ email });
 
       if (!existing) {
         await User.create({
-          username: user.name || user.email?.split("@")[0],
-          email: user.email,
+          username: user.name || email.split("@")[0],
+          email,
           password: null,
           provider: account?.provider,
+          role: "adopter",
         });
-      } else {
-        if (existing.provider !== account?.provider) {
-          existing.provider = account?.provider;
-          await existing.save();
-        }
+        return true;
       }
 
+      existing.role = normalizeRole(existing.role);
+
+      const provider = account?.provider || existing.provider || "credentials";
+
+      if (existing.provider !== provider) {
+        existing.provider = provider;
+      }
+
+      await existing.save();
       return true;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
+        session.user.role = normalizeRole(token.role);
       }
+
       return session;
     },
     async jwt({ token, user }) {
-      if (user) {
-        token.sub = user.id;
+      if (user?.email) {
+        await connectDB();
+        const dbUser = await User.findOne({ email: user.email.toLowerCase() }).select("role");
+        token.sub = dbUser?._id.toString() || user.id;
+        token.role = normalizeRole(dbUser?.role || user.role);
+        return token;
       }
+
+      if (token.email) {
+        await connectDB();
+        const dbUser = await User.findOne({ email: token.email.toLowerCase() }).select("role");
+        token.role = normalizeRole(dbUser?.role);
+      }
+
       return token;
     },
   },

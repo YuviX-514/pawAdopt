@@ -1,23 +1,35 @@
-// app/page.tsx
-"use client"
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
+import SectionFallback from "@/components/ui/SectionFallback";
 
-import Hero from "@/components/home/Hero";
-import Features from "@/components/home/Features";
-import Testimonials from "@/components/home/Testimonials";
-import CallToAction from "@/components/home/CallToAction";
-import Footer from "@/components/layout/Footer";
-import HowItWorks from "@/components/home/HowItWorks";
+const Hero = dynamic(() => import("@/components/home/Hero"), {
+  loading: () => <SectionFallback />,
+});
+const Features = dynamic(() => import("@/components/home/Features"), {
+  loading: () => <SectionFallback />,
+});
+const HowItWorks = dynamic(() => import("@/components/home/HowItWorks"), {
+  loading: () => <SectionFallback />,
+});
+const Testimonials = dynamic(() => import("@/components/home/Testimonials"), {
+  loading: () => <SectionFallback />,
+});
+const CallToAction = dynamic(() => import("@/components/home/CallToAction"), {
+  loading: () => <SectionFallback />,
+});
+const Footer = dynamic(() => import("@/components/layout/Footer"));
 
 export default function HomePage() {
   return (
     <main className="overflow-x-hidden">
-      <Hero />
-      <Features />
-      <HowItWorks/>
-      
-      <Testimonials />
-      <CallToAction />
-      <Footer />
+      <Suspense fallback={<SectionFallback />}>
+        <Hero />
+        <Features />
+        <HowItWorks />
+        <Testimonials />
+        <CallToAction />
+        <Footer />
+      </Suspense>
     </main>
   );
 }

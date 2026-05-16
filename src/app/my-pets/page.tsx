@@ -1,98 +1,128 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import toast from "react-hot-toast";
 import Image from "next/image";
+import toast from "react-hot-toast";
+import EmptyState from "@/components/ui/EmptyState";
+import LoadingState from "@/components/ui/LoadingState";
+import type { AdoptionRequest, ApiResult } from "@/types/pet";
 
-type Pet = {
-  _id: string;
-  name: string;
-  species: string;
-  photos: string[];
+const statusStyles = {
+  pending: "bg-amber-100 text-amber-800",
+  approved: "bg-green-100 text-green-800",
+  rejected: "bg-red-100 text-red-800",
 };
 
 export default function MyPetsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [pets, setPets] = useState<Pet[]>([]);
+  const [requests, setRequests] = useState<AdoptionRequest[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
 
     if (!session?.user?.email) {
-      toast.error("Please log in to view your adopted pets.");
+      toast.error("Please log in to view your adoption requests.");
+      router.push("/auth/login");
       return;
     }
 
-    const fetchPets = async () => {
+    let isMounted = true;
+
+    async function fetchRequests() {
       setLoading(true);
       try {
-        const res = await fetch("/api/pets/adopted", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: session.user!.email }),
-        });
+        const res = await fetch("/api/adoption-requests?scope=mine");
+        const payload = (await res.json()) as ApiResult<AdoptionRequest[]>;
 
-        if (!res.ok) throw new Error("Failed to fetch adopted pets.");
+        if (!res.ok || !payload.success || !payload.data) {
+          throw new Error(payload.message || "Failed to fetch adoption requests.");
+        }
 
-        const data: Pet[] = await res.json();
-        setPets(data);
+        if (isMounted) setRequests(payload.data);
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        toast.error(message);
+        toast.error(err instanceof Error ? err.message : "Unknown error occurred");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
+    }
+
+    fetchRequests();
+
+    return () => {
+      isMounted = false;
     };
+  }, [router, session, status]);
 
-    fetchPets();
-  }, [session, status]);
-
-  const handlePetClick = (petId: string) => {
-    router.push(`/pets/${petId}`);
-  };
+  if (loading || status === "loading") {
+    return <LoadingState label="Loading your adoption requests..." />;
+  }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-25 px-4">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-          My Adopted Pets
-        </h1>
-
-        {loading ? (
-          <p className="text-center text-gray-500">Loading your pets...</p>
-        ) : pets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {pets.map((pet) => (
-              <div
-                key={pet._id}
-                className="bg-white rounded-lg shadow p-4 text-center cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handlePetClick(pet._id)}
-              >
-                <div className="relative w-full h-48 mb-3">
-                  <Image
-                    src={pet.photos?.[0] || "/no-photo.jpg"}
-                    alt={pet.name}
-                    fill
-                    className="object-cover rounded"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                  />
-                </div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  {pet.name}
-                </h2>
-                <p className="text-gray-600">{pet.species}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-500">
-            No adopted pets found.
+    <main className="min-h-screen bg-gray-50 px-4 py-28">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">My Adoption Requests</h1>
+          <p className="mt-2 text-gray-600">
+            Track requests you have sent and see which pets have been approved.
           </p>
+        </div>
+
+        {requests.length === 0 ? (
+          <EmptyState
+            title="No adoption requests yet"
+            description="When you request to adopt a pet, it will appear here while the owner reviews it."
+          />
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2">
+            {requests.map((request) => {
+              const pet = request.pet;
+
+              return (
+                <button
+                  key={request.id}
+                  onClick={() => pet?.id && router.push(`/pets/${pet.id}`)}
+                  className="overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="relative h-56 bg-gray-100">
+                    {pet?.photos?.[0] ? (
+                      <Image
+                        src={pet.photos[0]}
+                        alt={pet.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-gray-400">
+                        No photo
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">{pet?.name || "Pet"}</h2>
+                        <p className="text-sm text-gray-600">{pet?.species}</p>
+                      </div>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyles[request.status]}`}>
+                        {request.status}
+                      </span>
+                    </div>
+                    {request.owner ? (
+                      <p className="mt-3 text-sm text-gray-500">Owner: {request.owner.username}</p>
+                    ) : null}
+                    {request.message ? (
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-500">{request.message}</p>
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
     </main>

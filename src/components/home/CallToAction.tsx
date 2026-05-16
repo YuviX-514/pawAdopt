@@ -1,6 +1,7 @@
 "use client";
 
 import { PawPrint } from "lucide-react";
+import Link from "next/link";
 
 export default function CallToAction() {
   return (
@@ -16,10 +17,10 @@ export default function CallToAction() {
         <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto opacity-90">
           Loving pets are waiting for their forever homes. Begin your adoption journey today.
         </p>
-        <button className="mt-4 inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[#FF8C42] text-white hover:bg-[#e67830] transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-[#e67830]/50 hover:-translate-y-0.5">
+        <Link href="/pets" className="mt-4 inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[#FF8C42] text-white hover:bg-[#e67830] transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-[#e67830]/50 hover:-translate-y-0.5">
           <PawPrint className="w-5 h-5" />
           Browse Available Pets
-        </button>
+        </Link>
       </div>
     </section>
   );

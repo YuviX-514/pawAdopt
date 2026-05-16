@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Search, Menu, X, User, PawPrint, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { canListPets, canReviewAdoptions, normalizeRole, type UserRole } from "@/lib/roles";
 
 export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [dbUser, setDbUser] = useState<{
     username: string;
     image: string;
+    role: UserRole;
   } | null>(null);
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export default function Navbar() {
           setDbUser({
             username: data.user.username,
             image: data.user.image,
+            role: normalizeRole(data.user.role),
           });
         }
       } catch (error) {
@@ -48,9 +51,16 @@ export default function Navbar() {
     setSidebarOpen(false);
   };
 
-  // ✅ Build nav items conditionally
+  const currentRole = dbUser?.role || normalizeRole(session?.user?.role);
+
   const navItems = [
     ...(session?.user ? [{ label: "My Pets", href: "/my-pets" }] : []),
+    ...(session?.user && canListPets(currentRole)
+      ? [{ label: "List Pet", href: "/pets/upload" }]
+      : []),
+    ...(session?.user && canReviewAdoptions(currentRole)
+      ? [{ label: "Requests", href: "/adoption-requests" }]
+      : []),
     { label: "Pets", href: "/pets" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
@@ -121,16 +131,17 @@ export default function Navbar() {
 
         {/* Right side icons */}
         <div className="flex items-center gap-4 ml-4">
-          {/* Upload Pet */}
-          <Link
-            href="/pets/upload"
-            className="flex items-center gap-0 p-2 rounded-full text-amber-100 hover:bg-amber-800/40 transition-all duration-300 group"
-          >
-            <PawPrint className="w-5 h-5 group-hover:text-amber-400 transition-colors duration-300" />
-            <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs group-hover:ml-2 group-hover:text-amber-400 duration-300 ease-in-out text-sm font-medium">
-              List Pet
-            </span>
-          </Link>
+          {status === "authenticated" && canListPets(currentRole) ? (
+            <Link
+              href="/pets/upload"
+              className="flex items-center gap-0 p-2 rounded-full text-amber-100 hover:bg-amber-800/40 transition-all duration-300 group"
+            >
+              <PawPrint className="w-5 h-5 group-hover:text-amber-400 transition-colors duration-300" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs group-hover:ml-2 group-hover:text-amber-400 duration-300 ease-in-out text-sm font-medium">
+                List Pet
+              </span>
+            </Link>
+          ) : null}
 
           {/* Auth */}
           <div className="hidden md:flex items-center gap-4">
@@ -190,6 +201,12 @@ export default function Navbar() {
                       className="block px-4 py-2 text-sm text-amber-100 hover:bg-amber-800/80 transition-colors"
                     >
                       Profile
+                    </Link>
+                    <Link
+                      href="/settings"
+                      className="block px-4 py-2 text-sm text-amber-100 hover:bg-amber-800/80 transition-colors"
+                    >
+                      Settings
                     </Link>
                     <button
                       onClick={() => signOut()}

@@ -1,104 +1,108 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { NextRequest } from "next/server";
+import type { UploadApiResponse } from "cloudinary";
 import cloudinary from "@/lib/cloudinary";
-import { connectDB } from "@/lib/db";
-import User from "@/models/User";
+import { fail, ok } from "@/lib/api-response";
+import {
+  assertCloudinaryPetPhoto,
+  PET_PHOTO_LIMITS,
+  validatePetPhotoFiles,
+} from "@/lib/photo-validation";
+import { canListPets } from "@/lib/roles";
+import { serializeDocument } from "@/lib/serializers";
+import { getCurrentUser } from "@/lib/server-auth";
+import Pet from "@/models/Pet";
 
-import mongoose, { HydratedDocument } from "mongoose";
-import Pet, { PetType } from "@/models/Pet";
-import {UploadApiResponse} from "cloudinary";
+function cleanString(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
 
-type PetDocumentObject = PetType & {
-  _id?: mongoose.Types.ObjectId;
-  __v?: number;
-  id?: string;
-};
+function cleanAge(value: FormDataEntryValue | null) {
+  const raw = cleanString(value);
+  if (!raw) return undefined;
 
-function transformPet(pet: HydratedDocument<PetType>) {
-  const obj = pet.toObject<PetDocumentObject>();
-  obj.id = pet.id.toString();
-  delete obj.id;
-  delete obj.__v;
-  return obj;
+  const age = Number(raw);
+  return Number.isFinite(age) && age >= 0 ? age : undefined;
+}
+
+function uploadToCloudinary(buffer: Buffer) {
+  return new Promise<UploadApiResponse>((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        {
+          resource_type: "image",
+          folder: "pets",
+          quality_analysis: true,
+        },
+        (err, result) => {
+          if (err || !result) return reject(err);
+          resolve(result);
+        }
+      )
+      .end(buffer);
+  });
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const currentUser = await getCurrentUser();
 
-    if (!session) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!currentUser) {
+      return fail("Unauthorized", 401);
+    }
+
+    if (!canListPets(currentUser.role)) {
+      return fail("Only owner and admin accounts can list pets.", 403);
     }
 
     const formData = await req.formData();
+    const files = formData
+      .getAll("photos")
+      .filter((file): file is File => file instanceof File);
 
-    const files = formData.getAll("photos") as File[];
+    const name = cleanString(formData.get("name"));
+    const species = cleanString(formData.get("species"));
 
-    if (!files || files.length === 0) {
-      return NextResponse.json(
-        { message: "At least one photo is required" },
-        { status: 400 }
-      );
+    if (!name || !species) {
+      return fail("Pet name and species are required.");
     }
 
+    const validatedPhotos = await validatePetPhotoFiles(files);
     const photoUrls: string[] = [];
 
-    for (const file of files) {
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
-      const uploadRes = await new Promise<UploadApiResponse>((resolve, reject) => {
-  cloudinary.uploader
-    .upload_stream(
-      {
-        resource_type: "image",
-        folder: "pets",
-      },
-      (err, result) => {
-        if (err || !result) return reject(err);
-        resolve(result);
-      }
-    )
-    .end(buffer);
-});
-
-
+    for (const photo of validatedPhotos) {
+      const uploadRes = await uploadToCloudinary(photo.buffer);
+      assertCloudinaryPetPhoto(uploadRes);
       photoUrls.push(uploadRes.secure_url);
     }
 
-    await connectDB();
-
-    const dbUser = await User.findOne({ email: session.user?.email });
-
-    if (!dbUser) {
-      return NextResponse.json(
-        { message: "User not found" },
-        { status: 404 }
-      );
-    }
-
     const pet = await Pet.create({
-      name: formData.get("name")?.toString() || "",
-      species: formData.get("species")?.toString() || "",
-      breed: formData.get("breed")?.toString() || "",
-      age: formData.get("age")
-        ? Number(formData.get("age")?.toString())
-        : null,
-      gender: formData.get("gender")?.toString() || "",
-      description: formData.get("description")?.toString() || "",
+      name,
+      species,
+      breed: cleanString(formData.get("breed")),
+      age: cleanAge(formData.get("age")),
+      gender: cleanString(formData.get("gender")),
+      description: cleanString(formData.get("description")),
       photos: photoUrls,
-      createdBy: dbUser._id,
+      createdBy: currentUser.document._id,
     });
 
-    const transformed = transformPet(pet);
-
-    return NextResponse.json(transformed, { status: 201 });
+    return ok(serializeDocument(pet), { status: 201 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { message: "Server error" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Unable to upload pet photos.";
+
+    if (
+      message.includes("photo") ||
+      message.includes("image") ||
+      message.includes("JPG") ||
+      message.includes("PNG") ||
+      message.includes("WebP") ||
+      message.includes(`${PET_PHOTO_LIMITS.maxFiles}`)
+    ) {
+      return fail(message);
+    }
+
+    console.error("POST /api/pets/upload error:", error);
+    return fail("Server error", 500);
   }
 }

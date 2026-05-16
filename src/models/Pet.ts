@@ -1,4 +1,4 @@
-import mongoose ,{Document, Types} from "mongoose";
+import mongoose, { Document, Types } from "mongoose";
 
 export interface PetType extends Document {
   name: string;
@@ -25,6 +25,7 @@ export interface PetType extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
 const PetSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -43,7 +44,6 @@ const PetSchema = new mongoose.Schema(
     },
 
     adopted: { type: Boolean, default: false },
-    
 
     adoptedBy: {
       name: { type: String },
@@ -61,4 +61,7 @@ const PetSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Pet || mongoose.model("Pet", PetSchema);
+PetSchema.index({ createdBy: 1, adopted: 1 });
+PetSchema.index({ name: "text", species: "text", breed: "text", description: "text" });
+
+export default mongoose.models.Pet || mongoose.model<PetType>("Pet", PetSchema);

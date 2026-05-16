@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"adopter" | "owner">("adopter");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +20,7 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, role }),
       });
 
       const data = await res.json();
@@ -86,6 +87,14 @@ export default function SignupPage() {
               required
               className="w-full bg-transparent border border-gray-600 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
+            <select
+              value={role}
+              onChange={(event) => setRole(event.target.value as "adopter" | "owner")}
+              className="w-full bg-gray-950 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            >
+              <option value="adopter">Adopter</option>
+              <option value="owner">Pet owner / rescuer</option>
+            </select>
 
             <button
               type="submit"

@@ -1,48 +1,33 @@
-import { connectDB } from "@/lib/db";
-import Pet from "@/models/Pet";
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import mongoose from "mongoose";
+import { connectDB } from "@/lib/db";
+import { fail, ok } from "@/lib/api-response";
+import { serializeDocument } from "@/lib/serializers";
+import Pet from "@/models/Pet";
 
-interface Params {
+type Params = {
   params: Promise<{ id: string }>;
-}
-export async function GET(req: NextRequest, { params }: Params) {
+};
+
+export async function GET(_req: NextRequest, { params }: Params) {
   try {
     await connectDB();
-    
+
     const { id } = await params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid pet ID" },
-        { status: 400 }
-      );
+      return fail("Invalid pet ID", 400);
     }
 
-    const pet = await Pet.findById(id).populate("createdBy", "username email image");
-
+    const pet = await Pet.findById(id).populate("createdBy", "username email image role");
 
     if (!pet) {
-      return NextResponse.json(
-        { success: false, message: "Pet not found" },
-        { status: 404 }
-      );
+      return fail("Pet not found", 404);
     }
 
-    const petObj = pet.toObject();
-    petObj.id = petObj._id.toString();
-    delete petObj._id;
-    delete petObj.__v;
-
-    return NextResponse.json({
-      success: true,
-      data: petObj,
-    });
+    return ok(serializeDocument(pet));
   } catch (error) {
-    console.error("Error fetching pet:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("GET /api/pets/[id] error:", error);
+    return fail("Internal server error", 500);
   }
 }

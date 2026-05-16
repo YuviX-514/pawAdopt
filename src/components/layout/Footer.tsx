@@ -36,10 +36,15 @@ export default function Footer() {
             Navigation
           </h3>
           <ul className="space-y-2">
-            {["Home", "Adopt", "Success Stories", "About"].map((item) => (
+            {[
+              ["Home", "/"],
+              ["Pets", "/pets"],
+              ["My Requests", "/my-pets"],
+              ["About", "/about"],
+            ].map(([item, href]) => (
               <li key={item}>
                 <Link
-                  href={`/${item.toLowerCase().replace(' ', '-')}`}
+                  href={href}
                   className="text-amber-200/80 hover:text-amber-400 text-sm transition flex items-center gap-1"
                 >
                   <FaPaw className="text-amber-400/50" size={10} />
@@ -56,10 +61,15 @@ export default function Footer() {
             Resources
           </h3>
           <ul className="space-y-2">
-            {["Adoption Guide", "Pet Care", "FAQ", "Volunteer"].map((item) => (
+            {[
+              ["List a Pet", "/pets/upload"],
+              ["Owner Requests", "/adoption-requests"],
+              ["Settings", "/settings"],
+              ["Contact", "/contact"],
+            ].map(([item, href]) => (
               <li key={item}>
                 <Link
-                  href={`/${item.toLowerCase().replace(' ', '-')}`}
+                  href={href}
                   className="text-amber-200/80 hover:text-amber-400 text-sm transition flex items-center gap-1"
                 >
                   <FaPaw className="text-amber-400/50" size={10} />

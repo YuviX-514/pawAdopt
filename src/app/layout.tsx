@@ -32,7 +32,7 @@ export default function RootLayout({
       >
         <Providers>
           <Navbar />
-          <main>{children}</main>
+          {children}
         </Providers>
       </body>
     </html>
