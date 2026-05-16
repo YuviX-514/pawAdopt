@@ -1,5 +1,5 @@
 import { withAuth } from "next-auth/middleware";
-import { canListPets, canReviewAdoptions, normalizeRole } from "@/lib/roles";
+import { canListPets, canReviewAdoptions, isAdmin, normalizeRole } from "@/lib/roles";
 
 export default withAuth({
   callbacks: {
@@ -15,6 +15,10 @@ export default withAuth({
 
       if (pathname.startsWith("/adoption-requests")) {
         return canReviewAdoptions(role);
+      }
+
+      if (pathname.startsWith("/admin")) {
+        return isAdmin(role);
       }
 
       return true;
@@ -33,5 +37,6 @@ export const config = {
     "/my-pets/:path*",
     "/pets/upload/:path*",
     "/adoption-requests/:path*",
+    "/admin/:path*",
   ],
 };

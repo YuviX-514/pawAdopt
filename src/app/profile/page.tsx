@@ -6,13 +6,12 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import LoadingState from "@/components/ui/LoadingState";
-import type { UserRole } from "@/lib/roles";
 
 export default function ProfilePage() {
   const { status, update } = useSession();
   const router = useRouter();
   const [username, setUsername] = useState("");
-  const [role, setRole] = useState<UserRole>("adopter");
+  const [role, setRole] = useState("adopter");
   const [previewUrl, setPreviewUrl] = useState("/user.png");
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState<File | null>(null);
@@ -71,7 +70,6 @@ export default function ProfilePage() {
 
     const formData = new FormData();
     formData.append("username", username);
-    formData.append("role", role);
 
     if (image) {
       formData.append("image", image);
@@ -144,14 +142,15 @@ export default function ProfilePage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">Account role</label>
             <select
               value={role}
-              onChange={(event) => setRole(event.target.value as UserRole)}
+              disabled
               className="w-full rounded border border-gray-300 px-3 py-2 focus:border-amber-500 focus:ring-amber-500"
             >
               <option value="adopter">Adopter</option>
               <option value="owner">Pet owner / rescuer</option>
+              <option value="admin">Admin</option>
             </select>
             <p className="mt-2 text-sm text-gray-500">
-              Owner accounts can list pets and review adoption requests.
+              Role changes are reviewed from Settings by PawAdopt admins.
             </p>
           </div>
 

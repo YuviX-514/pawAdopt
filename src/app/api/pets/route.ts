@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { fail, ok } from "@/lib/api-response";
-import { canListPets } from "@/lib/roles";
+import { canListPets, isAdmin } from "@/lib/roles";
 import { serializeDocuments, serializeDocument } from "@/lib/serializers";
 import { getCurrentUser } from "@/lib/server-auth";
 import Pet from "@/models/Pet";
@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
     const adopted = searchParams.get("adopted");
 
     const filters: Record<string, unknown> = {};
+    filters.moderationStatus = "approved";
 
     if (query) {
       filters.$or = [
@@ -67,6 +68,13 @@ export async function POST(req: NextRequest) {
       return fail("Only owner and admin accounts can list pets.", 403);
     }
 
+    if (currentUser.document.listingBanned && !isAdmin(currentUser.role)) {
+      return fail(
+        "Your account cannot submit new pet listings right now. Please contact support to appeal this restriction.",
+        403
+      );
+    }
+
     const body = await req.json();
     const name = cleanString(body.name);
     const species = cleanString(body.species);
@@ -87,6 +95,9 @@ export async function POST(req: NextRequest) {
       description: cleanString(body.description),
       photos,
       createdBy: currentUser.document._id,
+      moderationStatus: isAdmin(currentUser.role) ? "approved" : "pending",
+      reviewedBy: isAdmin(currentUser.role) ? currentUser.document._id : undefined,
+      reviewedAt: isAdmin(currentUser.role) ? new Date() : undefined,
     });
 
     return ok(serializeDocument(pet), { status: 201 });

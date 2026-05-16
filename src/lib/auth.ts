@@ -6,6 +6,7 @@ import User from "@/models/User";
 import { connectDB } from "@/lib/db";
 import { normalizeRole } from "@/lib/roles";
 import bcrypt from "bcryptjs";
+import { ensureConfiguredAdmins } from "@/lib/admin-seed";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -29,6 +30,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         await connectDB();
+        await ensureConfiguredAdmins();
 
         const user = await User.findOne({
           email: credentials.email.toLowerCase(),
@@ -61,6 +63,7 @@ export const authOptions: NextAuthOptions = {
       if (!user.email) return false;
 
       await connectDB();
+      await ensureConfiguredAdmins();
 
       const email = user.email.toLowerCase();
       const existing = await User.findOne({ email });
@@ -98,6 +101,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user?.email) {
         await connectDB();
+        await ensureConfiguredAdmins();
         const dbUser = await User.findOne({ email: user.email.toLowerCase() }).select("role");
         token.sub = dbUser?._id.toString() || user.id;
         token.role = normalizeRole(dbUser?.role || user.role);
@@ -106,6 +110,7 @@ export const authOptions: NextAuthOptions = {
 
       if (token.email) {
         await connectDB();
+        await ensureConfiguredAdmins();
         const dbUser = await User.findOne({ email: token.email.toLowerCase() }).select("role");
         token.role = normalizeRole(dbUser?.role);
       }

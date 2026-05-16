@@ -7,7 +7,7 @@ import {
   PET_PHOTO_LIMITS,
   validatePetPhotoFiles,
 } from "@/lib/photo-validation";
-import { canListPets } from "@/lib/roles";
+import { canListPets, isAdmin } from "@/lib/roles";
 import { serializeDocument } from "@/lib/serializers";
 import { getCurrentUser } from "@/lib/server-auth";
 import Pet from "@/models/Pet";
@@ -54,6 +54,13 @@ export async function POST(req: NextRequest) {
       return fail("Only owner and admin accounts can list pets.", 403);
     }
 
+    if (currentUser.document.listingBanned && !isAdmin(currentUser.role)) {
+      return fail(
+        "Your account cannot submit new pet listings right now. Please contact support to appeal this restriction.",
+        403
+      );
+    }
+
     const formData = await req.formData();
     const files = formData
       .getAll("photos")
@@ -84,9 +91,20 @@ export async function POST(req: NextRequest) {
       description: cleanString(formData.get("description")),
       photos: photoUrls,
       createdBy: currentUser.document._id,
+      moderationStatus: isAdmin(currentUser.role) ? "approved" : "pending",
+      reviewedBy: isAdmin(currentUser.role) ? currentUser.document._id : undefined,
+      reviewedAt: isAdmin(currentUser.role) ? new Date() : undefined,
     });
 
-    return ok(serializeDocument(pet), { status: 201 });
+    return ok(
+      {
+        pet: serializeDocument(pet),
+        message: isAdmin(currentUser.role)
+          ? "Pet listing published."
+          : "Pet listing submitted for admin review.",
+      },
+      { status: 201 }
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to upload pet photos.";
@@ -99,6 +117,7 @@ export async function POST(req: NextRequest) {
       message.includes("WebP") ||
       message.includes(`${PET_PHOTO_LIMITS.maxFiles}`)
     ) {
+      console.warn("Pet upload validation failed:", message);
       return fail(message);
     }
 

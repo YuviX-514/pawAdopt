@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import User, { type IUser } from "@/models/User";
 import { normalizeRole, type UserRole } from "@/lib/roles";
+import { ensureConfiguredAdmins } from "@/lib/admin-seed";
 
 export type CurrentUser = {
   id: string;
@@ -21,6 +22,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   }
 
   await connectDB();
+  await ensureConfiguredAdmins();
 
   const user = await User.findOne({ email: session.user.email });
   if (!user) return null;

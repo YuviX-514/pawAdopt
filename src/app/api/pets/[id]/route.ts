@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { fail, ok } from "@/lib/api-response";
 import { serializeDocument } from "@/lib/serializers";
+import { getCurrentUser } from "@/lib/server-auth";
+import { isAdmin } from "@/lib/roles";
 import Pet from "@/models/Pet";
 
 type Params = {
@@ -12,6 +14,7 @@ type Params = {
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
     await connectDB();
+    const currentUser = await getCurrentUser();
 
     const { id } = await params;
 
@@ -23,6 +26,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     if (!pet) {
       return fail("Pet not found", 404);
+    }
+
+    const isOwner = currentUser?.id && pet.createdBy?._id?.toString() === currentUser.id;
+    if (pet.moderationStatus !== "approved" && !isOwner && !isAdmin(currentUser?.role || "adopter")) {
+      return fail("Pet listing is not public yet.", 404);
     }
 
     return ok(serializeDocument(pet));

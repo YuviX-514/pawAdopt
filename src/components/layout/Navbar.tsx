@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Search, Menu, X, User, PawPrint, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { canListPets, canReviewAdoptions, normalizeRole, type UserRole } from "@/lib/roles";
+import { canListPets, canReviewAdoptions, isAdmin, normalizeRole, type UserRole } from "@/lib/roles";
 
 export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -61,6 +61,7 @@ export default function Navbar() {
     ...(session?.user && canReviewAdoptions(currentRole)
       ? [{ label: "Requests", href: "/adoption-requests" }]
       : []),
+    ...(session?.user && isAdmin(currentRole) ? [{ label: "Admin", href: "/admin" }] : []),
     { label: "Pets", href: "/pets" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
@@ -146,7 +147,10 @@ export default function Navbar() {
           {/* Auth */}
           <div className="hidden md:flex items-center gap-4">
             {status === "authenticated" && dbUser ? (
-              <div className="relative">
+              <div
+                className="relative"
+                onMouseLeave={() => setDropdownOpen(false)}
+              >
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 focus:outline-none group relative"
@@ -187,33 +191,40 @@ export default function Navbar() {
 
                 {/* Dropdown Menu */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-amber-900/90 backdrop-blur-md rounded-md shadow-lg border border-amber-200/20 z-50 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-amber-200/10">
-                      <p className="text-sm font-medium text-amber-100">
-                        {dbUser?.username}
-                      </p>
-                      <p className="text-xs text-amber-200/80 truncate">
-                        {session.user?.email}
-                      </p>
+                  <div className="absolute right-0 top-full z-50 w-48 pt-2">
+                    <div className="overflow-hidden rounded-md border border-amber-200/20 bg-amber-900/90 shadow-lg backdrop-blur-md">
+                      <div className="px-4 py-3 border-b border-amber-200/10">
+                        <p className="text-sm font-medium text-amber-100">
+                          {dbUser?.username}
+                        </p>
+                        <p className="text-xs text-amber-200/80 truncate">
+                          {session.user?.email}
+                        </p>
+                      </div>
+                      <Link
+                        href="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        className="block px-4 py-2 text-sm text-amber-100 hover:bg-amber-800/80 transition-colors"
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        href="/settings"
+                        onClick={() => setDropdownOpen(false)}
+                        className="block px-4 py-2 text-sm text-amber-100 hover:bg-amber-800/80 transition-colors"
+                      >
+                        Settings
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          signOut();
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-amber-100 hover:bg-amber-800/80 transition-colors border-t border-amber-200/10"
+                      >
+                        Log out
+                      </button>
                     </div>
-                    <Link
-                      href="/profile"
-                      className="block px-4 py-2 text-sm text-amber-100 hover:bg-amber-800/80 transition-colors"
-                    >
-                      Profile
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className="block px-4 py-2 text-sm text-amber-100 hover:bg-amber-800/80 transition-colors"
-                    >
-                      Settings
-                    </Link>
-                    <button
-                      onClick={() => signOut()}
-                      className="w-full text-left px-4 py-2 text-sm text-amber-100 hover:bg-amber-800/80 transition-colors border-t border-amber-200/10"
-                    >
-                      Log out
-                    </button>
                   </div>
                 )}
               </div>

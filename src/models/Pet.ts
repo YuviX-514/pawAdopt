@@ -9,6 +9,10 @@ export interface PetType extends Document {
   description?: string;
   photos: string[];
   createdBy: Types.ObjectId;
+  moderationStatus: "pending" | "approved" | "rejected";
+  rejectionReason?: string;
+  reviewedBy?: Types.ObjectId;
+  reviewedAt?: Date;
   adopted: boolean;
   adoptedBy?: {
     name?: string;
@@ -43,6 +47,16 @@ const PetSchema = new mongoose.Schema(
       required: true,
     },
 
+    moderationStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+      index: true,
+    },
+    rejectionReason: { type: String },
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    reviewedAt: { type: Date },
+
     adopted: { type: Boolean, default: false },
 
     adoptedBy: {
@@ -62,6 +76,7 @@ const PetSchema = new mongoose.Schema(
 );
 
 PetSchema.index({ createdBy: 1, adopted: 1 });
+PetSchema.index({ moderationStatus: 1, createdAt: -1 });
 PetSchema.index({ name: "text", species: "text", breed: "text", description: "text" });
 
 export default mongoose.models.Pet || mongoose.model<PetType>("Pet", PetSchema);

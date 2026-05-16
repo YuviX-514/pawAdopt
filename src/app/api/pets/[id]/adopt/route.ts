@@ -89,6 +89,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       return fail("This pet has already been adopted.", 400);
     }
 
+    if (pet.moderationStatus !== "approved") {
+      return fail("This pet is still being reviewed and cannot receive adoption requests yet.", 400);
+    }
+
     if (pet.createdBy.toString() === currentUser.id) {
       return fail("You cannot request adoption for your own listing.", 400);
     }

@@ -10,7 +10,7 @@ export default function ContactPage() {
             <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Contact</p>
             <h1 className="mt-3 text-4xl font-bold text-gray-900">Need help with an adoption?</h1>
             <p className="mt-4 text-lg leading-8 text-gray-600">
-              Reach out for support with listings, adoption requests, owner approvals, or account roles.
+              Reach out for support with listings, adoption requests, account reviews, or ban appeals.
             </p>
 
             <div className="mt-8 space-y-4 text-gray-700">
@@ -36,8 +36,14 @@ export default function ContactPage() {
                 Browse available pets
               </Link>
               <Link className="block rounded bg-white/10 px-4 py-3 hover:bg-white/20" href="/settings">
-                Change account role
+                Request role review
               </Link>
+              <a
+                className="block rounded bg-white/10 px-4 py-3 hover:bg-white/20"
+                href="mailto:hello@petadopt.com?subject=PawAdopt listing ban appeal"
+              >
+                Appeal listing restriction
+              </a>
               <Link className="block rounded bg-white/10 px-4 py-3 hover:bg-white/20" href="/adoption-requests">
                 Review adoption requests
               </Link>

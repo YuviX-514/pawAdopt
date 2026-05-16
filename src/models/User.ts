@@ -10,6 +10,18 @@ export interface IUser extends Document {
   provider?: string;
   role: UserRole;
   adoptedPets: mongoose.Types.ObjectId[];
+  listingRejectedCount: number;
+  listingBanned: boolean;
+  listingBanReason?: string;
+  listingBanLiftedAt?: Date;
+  roleRequest?: {
+    requestedRole?: UserRole;
+    message?: string;
+    status?: "none" | "pending" | "approved" | "rejected";
+    requestedAt?: Date;
+    reviewedAt?: Date;
+    reviewedBy?: mongoose.Types.ObjectId;
+  };
 }
 
 const UserSchema = new Schema<IUser>(
@@ -22,6 +34,22 @@ const UserSchema = new Schema<IUser>(
     provider: { type: String, default: "credentials" },
     role: { type: String, enum: [...USER_ROLES], default: "adopter" },
     adoptedPets: [{ type: Schema.Types.ObjectId, ref: "Pet" }],
+    listingRejectedCount: { type: Number, default: 0 },
+    listingBanned: { type: Boolean, default: false },
+    listingBanReason: { type: String },
+    listingBanLiftedAt: { type: Date },
+    roleRequest: {
+      requestedRole: { type: String, enum: [...USER_ROLES] },
+      message: { type: String },
+      status: {
+        type: String,
+        enum: ["none", "pending", "approved", "rejected"],
+        default: "none",
+      },
+      requestedAt: { type: Date },
+      reviewedAt: { type: Date },
+      reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    },
   },
   { timestamps: true }
 );

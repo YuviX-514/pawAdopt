@@ -3,14 +3,14 @@ import type { UploadApiResponse } from "cloudinary";
 export const PET_PHOTO_LIMITS = {
   maxFiles: 5,
   maxBytes: 5 * 1024 * 1024,
-  minBytes: 20 * 1024,
+  minBytes: 5 * 1024,
   minWidth: 320,
   minHeight: 320,
   allowedTypes: ["image/jpeg", "image/png", "image/webp"],
 } as const;
 
 const PLACEHOLDER_NAME_PATTERN =
-  /(dummy|placeholder|sample|default|stock|logo|avatar|icon|screenshot|test|blank|image)$/i;
+  /(dummy|placeholder|sample|default|stock|logo|avatar|icon|screenshot|test|blank)$/i;
 
 type ValidatedPetPhoto = {
   file: File;

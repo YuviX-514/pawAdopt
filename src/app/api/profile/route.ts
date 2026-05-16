@@ -16,6 +16,10 @@ function serializeProfile(user: Awaited<ReturnType<typeof getCurrentUser>>) {
     image: user.image || "/user.png",
     email: user.email,
     role: user.role,
+    listingRejectedCount: user.document.listingRejectedCount || 0,
+    listingBanned: Boolean(user.document.listingBanned),
+    listingBanReason: user.document.listingBanReason,
+    roleRequest: user.document.roleRequest,
   };
 }
 
@@ -55,7 +59,6 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData();
   const username = formData.get("username");
-  const role = normalizeRole(formData.get("role"));
   const imageFile = formData.get("image");
 
   if (typeof username !== "string" || username.trim().length < 2) {
@@ -93,10 +96,6 @@ export async function POST(req: NextRequest) {
 
   currentUser.document.username = username.trim();
   currentUser.document.image = imageUrl;
-
-  if (role !== "admin") {
-    currentUser.document.role = role;
-  }
 
   await currentUser.document.save();
 

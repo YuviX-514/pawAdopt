@@ -11,12 +11,27 @@ import type { ApiResult, Pet } from "@/types/pet";
 
 const MAX_FILES = 5;
 const MAX_MB = 5;
+const MIN_BYTES = 5 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const PLACEHOLDER_PATTERN = /(dummy|placeholder|sample|default|stock|logo|avatar|icon|test|blank|image)$/i;
+const PLACEHOLDER_PATTERN = /(dummy|placeholder|sample|default|stock|logo|avatar|icon|test|blank)$/i;
+const PET_SPECIES_OPTIONS = [
+  "Dog",
+  "Cat",
+  "Rabbit",
+  "Bird",
+  "Fish",
+  "Hamster",
+  "Guinea pig",
+  "Turtle",
+  "Horse",
+  "Ferret",
+  "Other",
+];
 
 const initialForm = {
   name: "",
   species: "",
+  otherSpecies: "",
   breed: "",
   age: "",
   gender: "",
@@ -37,6 +52,10 @@ function validatePhotoFiles(files: File[], existingCount = 0) {
 
     if (file.size / (1024 * 1024) > MAX_MB) {
       throw new Error(`${file.name} is too large. Max ${MAX_MB}MB allowed.`);
+    }
+
+    if (file.size < MIN_BYTES) {
+      throw new Error(`${file.name} is too small. Upload a clearer pet photo.`);
     }
 
     if (PLACEHOLDER_PATTERN.test(baseName)) {
@@ -116,9 +135,17 @@ export default function UploadPetPage() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    const selectedSpecies = form.species.trim();
+    const speciesForUpload =
+      selectedSpecies === "Other" ? form.otherSpecies.trim() : selectedSpecies;
 
-    if (!form.name.trim() || !form.species.trim() || photos.length === 0) {
+    if (!form.name.trim() || !speciesForUpload || photos.length === 0) {
       toast.error("Name, species, and at least one pet photo are required.");
+      return;
+    }
+
+    if (selectedSpecies === "Other" && !form.description.trim()) {
+      toast.error("Add a short description so adopters can understand this pet type.");
       return;
     }
 
@@ -126,7 +153,13 @@ export default function UploadPetPage() {
 
     const body = new FormData();
     Object.entries(form).forEach(([key, value]) => {
-      if (value) body.append(key, value);
+      if (!value || key === "otherSpecies") return;
+      if (key === "species") {
+        body.append("species", speciesForUpload);
+        return;
+      }
+
+      body.append(key, value);
     });
     photos.forEach((photo) => body.append("photos", photo));
 
@@ -135,14 +168,18 @@ export default function UploadPetPage() {
         method: "POST",
         body,
       });
-      const payload = (await res.json()) as ApiResult<Pet>;
+      const payload = (await res.json()) as ApiResult<{ pet: Pet; message: string }>;
 
       if (!res.ok || !payload.success) {
+        console.warn("Pet upload failed:", {
+          status: res.status,
+          message: payload.message,
+        });
         throw new Error(payload.message || "Upload failed");
       }
 
-      toast.success("Pet listing created.");
-      router.push(`/pets/${payload.data?.id || ""}`);
+      toast.success(payload.data?.message || "Pet listing submitted for review.");
+      router.push(payload.data?.pet?.id ? `/pets/${payload.data.pet.id}` : "/pets");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -156,7 +193,8 @@ export default function UploadPetPage() {
         <div className="mb-10 text-center">
           <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Add a New Pet</h1>
           <p className="mt-3 text-lg text-gray-500">
-            Clear, real pet photos help adopters and owners make better matches.
+            Clear, real pet photos help adopters and admins review listings faster.
+            New listings are checked by PawAdopt before they go public.
           </p>
         </div>
 
@@ -188,7 +226,7 @@ export default function UploadPetPage() {
                 </div>
               ) : (
                 <div className="py-8 text-center text-sm text-gray-500">
-                  Add at least one clear JPG, PNG, or WebP pet photo.
+                  Add at least one clear JPG, PNG, or WebP photo that matches the pet species.
                 </div>
               )}
 
@@ -225,7 +263,16 @@ export default function UploadPetPage() {
 
           <div className="grid gap-6 sm:grid-cols-2">
             <Field label="Pet name" name="name" value={form.name} onChange={handleChange} required />
-            <Field label="Species" name="species" value={form.species} onChange={handleChange} required />
+            <SpeciesField value={form.species} onChange={handleChange} loading={loading} />
+            {form.species === "Other" ? (
+              <Field
+                label="Pet type"
+                name="otherSpecies"
+                value={form.otherSpecies}
+                onChange={handleChange}
+                required
+              />
+            ) : null}
             <Field label="Breed" name="breed" value={form.breed} onChange={handleChange} />
             <Field label="Age (years)" name="age" type="number" min="0" value={form.age} onChange={handleChange} />
             <div>
@@ -252,6 +299,7 @@ export default function UploadPetPage() {
               rows={4}
               value={form.description}
               onChange={handleChange}
+              required={form.species === "Other"}
               disabled={loading}
               className="w-full rounded border border-gray-300 px-3 py-2 focus:border-amber-500 focus:ring-amber-500"
               placeholder="Personality, habits, medical notes, and care needs."
@@ -280,6 +328,37 @@ type FieldProps = {
   required?: boolean;
   min?: string;
 };
+
+function SpeciesField({
+  value,
+  onChange,
+  loading,
+}: {
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  loading: boolean;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-gray-700">Species</label>
+      <select
+        name="species"
+        required
+        value={value}
+        onChange={onChange}
+        disabled={loading}
+        className="w-full rounded border border-gray-300 px-3 py-2 focus:border-amber-500 focus:ring-amber-500"
+      >
+        <option value="">Select pet type</option>
+        {PET_SPECIES_OPTIONS.map((species) => (
+          <option key={species} value={species}>
+            {species}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 function Field({ label, name, value, onChange, type = "text", required, min }: FieldProps) {
   return (

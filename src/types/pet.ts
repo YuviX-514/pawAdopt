@@ -17,6 +17,8 @@ export type Pet = {
   gender?: string;
   description?: string;
   photos?: string[];
+  moderationStatus?: "pending" | "approved" | "rejected";
+  rejectionReason?: string;
   adopted: boolean;
   createdAt?: string;
   updatedAt?: string;

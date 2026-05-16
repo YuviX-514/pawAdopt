@@ -1,5 +1,6 @@
 const nextConfig = {
-  
+  allowedDevOrigins: ["172.16.0.2"],
+
   images: {
     remotePatterns: [
       {
