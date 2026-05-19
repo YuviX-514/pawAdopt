@@ -8,16 +8,26 @@ Create a local `.env.local` file with the app secrets before running the app:
 MONGODB_URI=your_mongodb_uri
 NEXTAUTH_SECRET=your_nextauth_secret
 NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-ADMIN_ONE_EMAIL=pawAdopt1@gmail.com
-ADMIN_ONE_PASSWORD=paw1@123
-ADMIN_TWO_EMAIL=pawAdopt2@gmail.com
-ADMIN_TWO_PASSWORD=paw2@123
 ```
 
 Pet uploads are submitted for admin review before they appear publicly. Accounts are automatically restricted from new listings after five rejected submissions until an admin removes the restriction.
+
+For production on Vercel, set these environment variables in the Vercel project:
+
+```bash
+NEXTAUTH_URL=https://paw-adopt.vercel.app
+NEXT_PUBLIC_BASE_URL=https://paw-adopt.vercel.app
+```
+
+Google OAuth authorized redirect URI:
+
+```bash
+https://paw-adopt.vercel.app/api/auth/callback/google
+```
 
 First, run the development server:
 

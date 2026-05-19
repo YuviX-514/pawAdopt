@@ -32,8 +32,6 @@ export default withAuth({
 
 export const config = {
   matcher: [
-    "/profile/:path*",
-    "/settings/:path*",
     "/my-pets/:path*",
     "/pets/upload/:path*",
     "/adoption-requests/:path*",

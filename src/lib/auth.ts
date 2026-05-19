@@ -8,6 +8,17 @@ import { normalizeRole } from "@/lib/roles";
 import bcrypt from "bcryptjs";
 import { ensureConfiguredAdmins } from "@/lib/admin-seed";
 
+const PRODUCTION_URL = "https://paw-adopt.vercel.app";
+
+function getAllowedAuthOrigins(baseUrl: string) {
+  return new Set([
+    baseUrl,
+    PRODUCTION_URL,
+    process.env.NEXTAUTH_URL,
+    process.env.NEXT_PUBLIC_BASE_URL,
+  ].filter((origin): origin is string => Boolean(origin)));
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -116,6 +127,18 @@ export const authOptions: NextAuthOptions = {
       }
 
       return token;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+
+      try {
+        const targetUrl = new URL(url);
+        if (getAllowedAuthOrigins(baseUrl).has(targetUrl.origin)) return url;
+      } catch {
+        return baseUrl;
+      }
+
+      return baseUrl;
     },
   },
 };
